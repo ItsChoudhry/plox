@@ -1,54 +1,54 @@
-from enum import Enum, auto
+from enum import Enum
 
 
 class TokenType(Enum):
     # single  character token
-    LEFT_PAREN = auto()
-    RIGHT_PAREN = auto()
-    LEFT_BRACE = auto()
-    RIGHT_BRACE = auto()
-    COMMA = auto()
-    DOT = auto()
-    MINUS = auto()
-    PLUS = auto()
-    SEMICOLON = auto()
-    SLASH = auto()
-    STAR = auto()
+    LEFT_PAREN = "("
+    RIGHT_PAREN = ")"
+    LEFT_BRACE = "["
+    RIGHT_BRACE = "]"
+    COMMA = ","
+    DOT = "."
+    MINUS = "-"
+    PLUS = "+"
+    SEMICOLON = ";"
+    SLASH = "/"
+    STAR = "*"
 
     # one or two  characters token
-    BANG = auto()
-    BANG_EQUAL = auto()
-    EQUAL = auto()
-    EQUAL_EQUAL = auto()
-    GREATER = auto()
-    GREATER_EQUAL = auto()
-    LESS = auto()
-    LESS_EQUAL = auto()
+    BANG = "!"
+    BANG_EQUAL = "!="
+    EQUAL = "="
+    EQUAL_EQUAL = "=="
+    GREATER = ">"
+    GREATER_EQUAL = ">="
+    LESS = "<"
+    LESS_EQUAL = "<="
 
     # Literals
-    IDENTIFIER = auto()
-    STRING = auto()
-    NUMBER = auto()
+    IDENTIFIER = "identifier"
+    STRING = "str"
+    NUMBER = "int"
 
     # KEYWORDS
-    AND = auto()
-    CLASS = auto()
-    ELSE = auto()
-    FALSE = auto()
-    FUN = auto()
-    FOR = auto()
-    IF = auto()
-    NIL = auto()
-    OR = auto()
-    PRINT = auto()
-    RETURN = auto()
-    SUPER = auto()
-    THIS = auto()
-    TRUE = auto()
-    VAR = auto()
-    WHILE = auto()
+    AND = "and"
+    CLASS = "class"
+    ELSE = "else"
+    FALSE = "false"
+    FUN = "fun"
+    FOR = "for"
+    IF = "if"
+    NIL = "nil"
+    OR = "or"
+    PRINT = "print"
+    RETURN = "return"
+    SUPER = "super"
+    THIS = "this"
+    TRUE = "true"
+    VAR = "var"
+    WHILE = "while"
 
-    EOF = auto()
+    EOF = ""
 
     def __str__(self):
         return self.name
