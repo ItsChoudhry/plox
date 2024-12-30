@@ -1,3 +1,7 @@
 # Plox
 
-A pythong implementation of lox
+A python implementation of lox
+
+## Run
+
+`python3 -m plox` or `python3 -m plox <file>`

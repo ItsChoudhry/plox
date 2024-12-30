@@ -7,6 +7,8 @@ class TokenType(Enum):
     RIGHT_PAREN = ")"
     LEFT_BRACE = "["
     RIGHT_BRACE = "]"
+    LEFT_CURLY_BRACE = "{"
+    RIGHT_CURLY_BRACE = "}"
     COMMA = ","
     DOT = "."
     MINUS = "-"
@@ -52,3 +54,19 @@ class TokenType(Enum):
 
     def __str__(self):
         return self.name
+
+
+SINGLE_CHARS: tuple[str, ...] = (
+    "(",
+    ")",
+    "{",
+    "}",
+    ",",
+    ".",
+    "-",
+    "+",
+    ";",
+    "*",
+)
+
+ONE_OR_MORE_CHARS: tuple[str, ...] = ("!", "!=", "=", "==", ">", ">=", "<", "<=")

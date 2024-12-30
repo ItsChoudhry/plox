@@ -1,5 +1,14 @@
 import argparse
 import sys
+import logging
+
+from plox.scanner import Scanner
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from plox.token import Token
+
+logger = logging.getLogger(__name__)
 
 
 def error(line: int, message: str):
@@ -7,11 +16,15 @@ def error(line: int, message: str):
 
 
 def report(line: int, where: str, message: str):
-    report(f"[line] Error: {where}: {message}")
+    logger.info("[%d] Error: %s: %s", line, where, message)
 
 
 def run(input):
-    print(input)
+    scanner = Scanner(input)
+    tokens: list[Token] = scanner.scan_tokens()
+
+    for token in tokens:
+        logger.info(token)
 
 
 def runFile(path: str):

@@ -1,5 +1,5 @@
 from typing import Final
-from .token_type import TokenType
+from plox.token_type import TokenType
 
 
 class Token:
@@ -10,4 +10,7 @@ class Token:
         self.line: Final[int] = line
 
     def __str__(self):
+        return f"{self.type} {self.lexeme} {self.literal}"
+
+    def __repr__(self):
         return f"{self.type} {self.lexeme} {self.literal}"
