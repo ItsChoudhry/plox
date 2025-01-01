@@ -47,7 +47,7 @@ class Scanner:
         return self.source[self.current]
 
     def string(self):
-        while self.peek() != '"' and self.is_at_end():
+        while self.peek() != '"' and not self.is_at_end():
             if self.peek() == "\n":
                 self.line += 1
             self.advance()
