@@ -46,6 +46,20 @@ class Scanner:
             return "\0"
         return self.source[self.current]
 
+    def string(self):
+        while self.peek() != '"' and self.is_at_end():
+            if self.peek() == "\n":
+                self.line += 1
+            self.advance()
+
+        if self.is_at_end():
+            logger.error("%s unterminated string.", self.line)
+            return
+        self.advance()
+
+        value = self.source[self.start + 1 : self.current - 1]
+        self.add_token(TokenType.STRING, value)
+
     def scan_token(self):
         c: str = self.advance()
         try:
@@ -66,7 +80,8 @@ class Scanner:
             elif c == "\n":
                 self.line += 1
                 return
-
+            elif c == '"':
+                self.string()
         except ValueError as e:
             logger.info("source of error: %s", self.source)
             raise ValueError(f"unexpected character on {self.line}: {e}") from e
