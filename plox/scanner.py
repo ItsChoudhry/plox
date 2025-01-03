@@ -46,6 +46,11 @@ class Scanner:
             return "\0"
         return self.source[self.current]
 
+    def peek_next(self):
+        if self.current + 1 >= len(self.source):
+            return "\0"
+        return self.source[self.current + 1]
+
     def string(self):
         while self.peek() != '"' and not self.is_at_end():
             if self.peek() == "\n":
@@ -59,6 +64,15 @@ class Scanner:
 
         value = self.source[self.start + 1 : self.current - 1]
         self.add_token(TokenType.STRING, value)
+
+    def number(self):
+        while self.peek().isdigit():
+            self.advance()
+        if self.peek() == "." and self.peek_next().isdigit():
+            self.advance()
+            while self.peek().isdigit():
+                self.advance()
+        self.add_token(TokenType.NUMBER, float(self.source[self.start : self.current]))
 
     def scan_token(self):
         c: str = self.advance()
@@ -82,6 +96,9 @@ class Scanner:
                 return
             elif c == '"':
                 self.string()
+            elif c.isdigit():
+                self.number()
+
         except ValueError as e:
             logger.info("source of error: %s", self.source)
             raise ValueError(f"unexpected character on {self.line}: {e}") from e
