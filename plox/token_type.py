@@ -70,3 +70,22 @@ SINGLE_CHARS: tuple[str, ...] = (
 )
 
 ONE_OR_MORE_CHARS: tuple[str, ...] = ("!", "!=", "=", "==", ">", ">=", "<", "<=")
+
+KEYWORDS: dict[str, TokenType] = {
+    "and": TokenType.AND,
+    "class": TokenType.CLASS,
+    "else": TokenType.ELSE,
+    "false": TokenType.FALSE,
+    "fun": TokenType.FUN,
+    "for": TokenType.FOR,
+    "if": TokenType.IF,
+    "nil": TokenType.NIL,
+    "or": TokenType.OR,
+    "print": TokenType.PRINT,
+    "return": TokenType.RETURN,
+    "super": TokenType.SUPER,
+    "this": TokenType.THIS,
+    "true": TokenType.TRUE,
+    "var": TokenType.VAR,
+    "while": TokenType.WHILE,
+}

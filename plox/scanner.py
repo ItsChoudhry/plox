@@ -74,6 +74,14 @@ class Scanner:
                 self.advance()
         self.add_token(TokenType.NUMBER, float(self.source[self.start : self.current]))
 
+    def identifier(self):
+        while self.peek().isalnum():
+            self.advance()
+
+        text = self.source[self.start : self.current]
+        type: TokenType = TokenType.IDENTIFIER if text not in TokenType else TokenType(text)
+        self.add_token(type)
+
     def scan_token(self):
         c: str = self.advance()
         try:
@@ -98,6 +106,8 @@ class Scanner:
                 self.string()
             elif c.isdigit():
                 self.number()
+            elif c.isalpha():
+                self.identifier()
 
         except ValueError as e:
             logger.info("source of error: %s", self.source)
