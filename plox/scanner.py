@@ -82,6 +82,18 @@ class Scanner:
         type: TokenType = TokenType.IDENTIFIER if text not in TokenType else TokenType(text)
         self.add_token(type)
 
+    def multi_line_comment(self):
+        while self.peek() != "*" and not self.is_at_end():
+            if self.peek() == "\n":
+                self.line += 1
+            self.advance()
+
+        if not self.is_at_end() and self.peek_next() == "/":
+            self.advance()
+            self.advance()
+        else:
+            raise Exception("unterminated comment on line: %s", self.line)  # noqa: TRY002
+
     def scan_token(self):
         c: str = self.advance()
         try:
@@ -95,6 +107,8 @@ class Scanner:
                     while self.peek() != "\n" and self.is_at_end() is not True:
                         self.advance()
                     return
+                elif self.match("*"):
+                    self.multi_line_comment()
                 else:
                     self.add_token(TokenType.SLASH)
             elif c == " " or c == "\r" or c == "\t":
@@ -110,7 +124,7 @@ class Scanner:
                 self.identifier()
 
         except ValueError as e:
-            logger.info("source of error: %s", self.source)
+            logger.error("source of error: %s", self.source)
             raise ValueError(f"unexpected character on {self.line}: {e}") from e
 
     def add_token(self, type: TokenType, litral: object = None):
