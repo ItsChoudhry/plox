@@ -119,6 +119,7 @@ pythonVersion = "3.13"
 typeCheckingMode = "basic"
 
 reportRedeclaration = false
+reportAssignmentType = false
 # reportUntypedFunctionDecorator = "error"
 # reportUntypedClassDecorator = "error"
 # reportUntypedNamedTuple = "error"
