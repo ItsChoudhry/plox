@@ -21,35 +21,63 @@ EXPRESSIONS: ASTDict = {
 INDENTATION = "    "
 
 
-def define_type(f: TextIO, name: str, class_name: str, fields: tuple[str]):
+def define_type(f: TextIO, base_name: str, class_name: str, fields: tuple[str]):
     f.write("@dataclass")
     f.write("\n")
-    f.write(f"class {class_name}({name}):")
+    f.write(f"class {class_name}({base_name}):")
     f.write("\n")
+
     for field in fields:
         variable = field.split(":")[0].strip()
         type_name = field.split(":")[1].strip()
         f.write(f"{INDENTATION}{variable}: Final[{type_name}]")
         f.write("\n")
 
+    f.write("\n")
+    f.write(f"{INDENTATION}@abstractmethod")
+    f.write("\n")
+    f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor):")
+    f.write("\n")
+    f.write(f"{INDENTATION*2}return visitor.visit_{class_name.lower()}_{base_name.lower()}(self)")
+    f.write("\n")
+
+
+def define_visitor(f: TextIO, base_name: str, types: ASTDict):
+    f.write("\n")
+    f.write(f"class {base_name}Visitor(ABC):")
+    f.write("\n")
+    for type in types.keys():
+        f.write(f"{INDENTATION}@abstractmethod")
+        f.write("\n")
+        f.write(f'{INDENTATION}def visit_{type.lower()}_{base_name.lower()}(self, {base_name.lower()}: "Expr"):')
+        f.write("\n")
+        f.write(f"{INDENTATION*2}pass")
+        f.write("\n\n")
+
+
+def define_imports(f: TextIO):
+    f.write("from abc import ABC, abstractmethod")
+    f.write("\n")
+    f.write("from dataclasses import dataclass")
+    f.write("\n")
+    f.write("from typing import Final")
+    f.write("\n")
+    f.write("from plox.token import Token")
+    f.write("\n\n")
+
 
 def define_ast(output_dir: Path, base_name: str, types: ASTDict):
     name = base_name.title()
 
     with output_dir.open(mode="w", encoding="utf-8") as f:
-        f.write("from abc import ABC, abstractmethod")
+        define_imports(f)
+        define_visitor(f, base_name, types)
         f.write("\n")
-        f.write("from dataclasses import dataclass")
-        f.write("\n")
-        f.write("from typing import Final")
-        f.write("\n")
-        f.write("from plox.token import Token")
-        f.write("\n\n\n")
         f.write(f"class {base_name}(ABC):")
         f.write("\n")
         f.write(f"{INDENTATION}@abstractmethod")
         f.write("\n")
-        f.write(f"{INDENTATION}def accept(self):")
+        f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor):")
         f.write("\n")
         f.write(f"{INDENTATION*2}pass")
         f.write("\n\n")
