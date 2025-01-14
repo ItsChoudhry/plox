@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Final
+from typing import Final, override
 from plox.token import Token
 
 
@@ -38,7 +38,7 @@ class Binary(Expr):
     operator: Final[Token]
     right: Final[Expr]
 
-    @abstractmethod
+    @override
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_binary_expr(self)
 
@@ -47,7 +47,7 @@ class Binary(Expr):
 class Grouping(Expr):
     expression: Final[Expr]
 
-    @abstractmethod
+    @override
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_grouping_expr(self)
 
@@ -56,7 +56,7 @@ class Grouping(Expr):
 class Literal(Expr):
     value: Final[object]
 
-    @abstractmethod
+    @override
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_literal_expr(self)
 
@@ -66,7 +66,7 @@ class Unary(Expr):
     operator: Final[Token]
     right: Final[Expr]
 
-    @abstractmethod
+    @override
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_unary_expr(self)
 
@@ -75,6 +75,6 @@ class Unary(Expr):
 class Variable(Expr):
     name: Final[Token]
 
-    @abstractmethod
+    @override
     def accept(self, visitor: ExprVisitor):
         return visitor.visit_variable_expr(self)
