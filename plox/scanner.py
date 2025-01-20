@@ -14,7 +14,7 @@ class Scanner:
         self.start: int = 0
         self.line: int = 1
 
-    def is_at_end(self):
+    def is_at_end(self) -> bool:
         return self.current >= len(self.source)
 
     def scan_tokens(self) -> list[Token]:
@@ -41,17 +41,17 @@ class Scanner:
         self.current += 1
         return True
 
-    def peek(self):
+    def peek(self) -> str:
         if self.is_at_end():
             return "\0"
         return self.source[self.current]
 
-    def peek_next(self):
+    def peek_next(self) -> str:
         if self.current + 1 >= len(self.source):
             return "\0"
         return self.source[self.current + 1]
 
-    def string(self):
+    def string(self) -> None:
         while self.peek() != '"' and not self.is_at_end():
             if self.peek() == "\n":
                 self.line += 1
@@ -65,7 +65,7 @@ class Scanner:
         value = self.source[self.start + 1 : self.current - 1]
         self.add_token(TokenType.STRING, value)
 
-    def number(self):
+    def number(self) -> None:
         while self.peek().isdigit():
             self.advance()
         if self.peek() == "." and self.peek_next().isdigit():
@@ -82,7 +82,7 @@ class Scanner:
         type: TokenType = TokenType.IDENTIFIER if text not in TokenType else TokenType(text)
         self.add_token(type)
 
-    def multi_line_comment(self):
+    def multi_line_comment(self) -> None:
         while self.peek() != "*" and not self.is_at_end():
             if self.peek() == "\n":
                 self.line += 1
@@ -94,7 +94,7 @@ class Scanner:
         else:
             raise Exception("unterminated comment on line: %s", self.line)  # noqa: TRY002
 
-    def scan_token(self):
+    def scan_token(self) -> None:
         c: str = self.advance()
         try:
             if c in SINGLE_CHARS:
@@ -127,6 +127,6 @@ class Scanner:
             logger.error("source of error: %s", self.source)
             raise ValueError(f"unexpected character on {self.line}: {e}") from e
 
-    def add_token(self, type: TokenType, litral: object = None):
+    def add_token(self, type: TokenType, litral: object = None) -> None:
         text = self.source[self.start : self.current]
         self.tokens.append(Token(type, text, litral, self.line))

@@ -34,9 +34,9 @@ def define_type(f: TextIO, base_name: str, class_name: str, fields: tuple[str]):
         f.write("\n")
 
     f.write("\n")
-    f.write(f"{INDENTATION}@abstractmethod")
+    f.write(f"{INDENTATION}@override")
     f.write("\n")
-    f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor):")
+    f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor) -> None:")
     f.write("\n")
     f.write(f"{INDENTATION*2}return visitor.visit_{class_name.lower()}_{base_name.lower()}(self)")
     f.write("\n")
@@ -49,7 +49,9 @@ def define_visitor(f: TextIO, base_name: str, types: ASTDict):
     for type in types.keys():
         f.write(f"{INDENTATION}@abstractmethod")
         f.write("\n")
-        f.write(f'{INDENTATION}def visit_{type.lower()}_{base_name.lower()}(self, {base_name.lower()}: "Expr"):')
+        f.write(
+            f'{INDENTATION}def visit_{type.lower()}_{base_name.lower()}(self, {base_name.lower()}: "Expr") -> None:'
+        )
         f.write("\n")
         f.write(f"{INDENTATION*2}pass")
         f.write("\n\n")
@@ -60,7 +62,7 @@ def define_imports(f: TextIO):
     f.write("\n")
     f.write("from dataclasses import dataclass")
     f.write("\n")
-    f.write("from typing import Final")
+    f.write("from typing import Final, override")
     f.write("\n")
     f.write("from plox.token import Token")
     f.write("\n\n")
@@ -77,7 +79,7 @@ def define_ast(output_dir: Path, base_name: str, types: ASTDict):
         f.write("\n")
         f.write(f"{INDENTATION}@abstractmethod")
         f.write("\n")
-        f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor):")
+        f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor) -> None:")
         f.write("\n")
         f.write(f"{INDENTATION*2}pass")
         f.write("\n\n")

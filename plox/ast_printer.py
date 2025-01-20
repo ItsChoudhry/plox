@@ -1,35 +1,35 @@
-from typing import override
+from typing import Any, override
 from plox import expr
 from plox.token import Token
 from plox.token_type import TokenType
 
 
 class AstPrinter(expr.ExprVisitor):
-    def print(self, expr: expr.Expr):
+    def print(self, expr: expr.Expr) -> Any:
         return expr.accept(self)
 
-    def parenthesize(self, name: str, *exprs: expr.Expr):
+    def parenthesize(self, name: str, *exprs: expr.Expr) -> str:
         expressions = " ".join(ex.accept(self) for ex in exprs)
         return f"({name} {expressions})"
 
     @override
-    def visit_binary_expr(self, expr: expr.Binary):
+    def visit_binary_expr(self, expr: expr.Binary) -> str:
         return self.parenthesize(expr.operator.lexeme, expr.left, expr.right)
 
     @override
-    def visit_grouping_expr(self, expr: expr.Grouping):
+    def visit_grouping_expr(self, expr: expr.Grouping) -> str:
         return self.parenthesize("group", expr.expression)
 
     @override
-    def visit_literal_expr(self, expr: expr.Literal):
+    def visit_literal_expr(self, expr: expr.Literal) -> str:
         return str(expr.value)
 
     @override
-    def visit_unary_expr(self, expr: expr.Unary):
+    def visit_unary_expr(self, expr: expr.Unary) -> str:
         return self.parenthesize(expr.operator.lexeme, expr.right)
 
     @override
-    def visit_variable_expr(self, expr: expr.Variable):
+    def visit_variable_expr(self, expr: expr.Variable) -> str:
         return expr.name.lexeme
 
 

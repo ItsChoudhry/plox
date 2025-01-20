@@ -6,29 +6,29 @@ from plox.token import Token
 
 class ExprVisitor(ABC):
     @abstractmethod
-    def visit_binary_expr(self, expr: "Expr"):
+    def visit_binary_expr(self, expr: "Expr") -> None:
         pass
 
     @abstractmethod
-    def visit_grouping_expr(self, expr: "Expr"):
+    def visit_grouping_expr(self, expr: "Expr") -> None:
         pass
 
     @abstractmethod
-    def visit_literal_expr(self, expr: "Expr"):
+    def visit_literal_expr(self, expr: "Expr") -> None:
         pass
 
     @abstractmethod
-    def visit_unary_expr(self, expr: "Expr"):
+    def visit_unary_expr(self, expr: "Expr") -> None:
         pass
 
     @abstractmethod
-    def visit_variable_expr(self, expr: "Expr"):
+    def visit_variable_expr(self, expr: "Expr") -> None:
         pass
 
 
 class Expr(ABC):
     @abstractmethod
-    def accept(self, visitor: ExprVisitor):
+    def accept(self, visitor: ExprVisitor) -> None:
         pass
 
 
@@ -39,7 +39,7 @@ class Binary(Expr):
     right: Final[Expr]
 
     @override
-    def accept(self, visitor: ExprVisitor):
+    def accept(self, visitor: ExprVisitor) -> None:
         return visitor.visit_binary_expr(self)
 
 
@@ -48,7 +48,7 @@ class Grouping(Expr):
     expression: Final[Expr]
 
     @override
-    def accept(self, visitor: ExprVisitor):
+    def accept(self, visitor: ExprVisitor) -> None:
         return visitor.visit_grouping_expr(self)
 
 
@@ -57,7 +57,7 @@ class Literal(Expr):
     value: Final[object]
 
     @override
-    def accept(self, visitor: ExprVisitor):
+    def accept(self, visitor: ExprVisitor) -> None:
         return visitor.visit_literal_expr(self)
 
 
@@ -67,7 +67,7 @@ class Unary(Expr):
     right: Final[Expr]
 
     @override
-    def accept(self, visitor: ExprVisitor):
+    def accept(self, visitor: ExprVisitor) -> None:
         return visitor.visit_unary_expr(self)
 
 
@@ -76,5 +76,5 @@ class Variable(Expr):
     name: Final[Token]
 
     @override
-    def accept(self, visitor: ExprVisitor):
+    def accept(self, visitor: ExprVisitor) -> None:
         return visitor.visit_variable_expr(self)
