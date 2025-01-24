@@ -2,17 +2,24 @@ import argparse
 import sys
 import logging
 
+from plox.ast_printer import AstPrinter
+from plox.expr import Expr
+from plox.parser import Parser
 from plox.scanner import Scanner
-from typing import TYPE_CHECKING
 
-if TYPE_CHECKING:
-    from plox.token import Token
+from plox.token_type import TokenType
+from plox.token import Token
+
 
 logger = logging.getLogger(__name__)
 
 
-def error(line: int, message: str):
-    report(line, "", message)
+@staticmethod
+def error(token: Token, message: str) -> None:
+    if token.type == TokenType.EOF:
+        report(token.line, " at end", message)
+    else:
+        report(token.line, f" at '{token.lexeme}'", message)
 
 
 def report(line: int, where: str, message: str):
@@ -23,8 +30,11 @@ def run(input):
     scanner = Scanner(input)
     tokens: list[Token] = scanner.scan_tokens()
 
-    for token in tokens:
-        logger.info(token)
+    parser: Parser = Parser(tokens)
+    expression: Expr = parser.parse()
+
+    print("printer")
+    print(AstPrinter().print(expression))
 
 
 def runFile(path: str):
