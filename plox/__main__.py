@@ -33,6 +33,8 @@ def run(input):
     parser: Parser = Parser(tokens)
     expression: Expr = parser.parse()
 
+    print("exprs")
+    print(expression)
     print("printer")
     print(AstPrinter().print(expression))
 

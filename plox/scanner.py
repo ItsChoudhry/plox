@@ -23,7 +23,7 @@ class Scanner:
             self.scan_token()
 
         self.tokens.append(Token(TokenType.EOF, "", None, self.line))
-        print(self.tokens)
+        # print(self.tokens)
         return self.tokens
 
     def advance(self) -> str:
