@@ -4,6 +4,18 @@ from plox.token import Token
 from plox.token_type import TokenType
 
 
+class LoxRuntimeError(RuntimeError):
+    def __init__(self, token: Token, message: str) -> None:
+        super().__init__(message)
+        self.token = token
+
+    def __str__(self) -> str:
+        return super().__str__()
+
+    def __repr__(self) -> str:
+        return super().__repr__()
+
+
 class Interpreter(ExprVisitor):
     def check_if_number(self, operator: Token, left: Any, right: Any) -> None:
         if isinstance(left, int | float) and isinstance(right, int | float):
@@ -14,6 +26,19 @@ class Interpreter(ExprVisitor):
     @staticmethod
     def is_equal(a: Any, b: Any) -> bool:
         return a == b
+
+    @staticmethod
+    def stringify(obj: Any) -> str:
+        if obj is None:
+            return "null"
+
+        if isinstance(obj, str):
+            return obj
+
+        if isinstance(obj, bool):
+            return str(obj).lower()
+
+        return str(obj)
 
     @override
     def visit_binary_expr(self, expr: Binary) -> object:
@@ -83,3 +108,10 @@ class Interpreter(ExprVisitor):
     @override
     def visit_variable_expr(self, expr: "Expr") -> None:
         pass
+
+    def interpret(self, expression: "Expr") -> None:
+        try:
+            value: Any = self.evaluate(expression)
+            print(value)
+        except RuntimeError as e:
+            print(e)
