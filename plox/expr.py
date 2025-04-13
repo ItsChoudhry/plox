@@ -1,80 +1,34 @@
-from abc import ABC, abstractmethod
 from dataclasses import dataclass
-from typing import Final, override
 from plox.token import Token
 
 
-class ExprVisitor(ABC):
-    @abstractmethod
-    def visit_binary_expr(self, expr: "Expr") -> None:
-        pass
-
-    @abstractmethod
-    def visit_grouping_expr(self, expr: "Expr") -> None:
-        pass
-
-    @abstractmethod
-    def visit_literal_expr(self, expr: "Expr") -> None:
-        pass
-
-    @abstractmethod
-    def visit_unary_expr(self, expr: "Expr") -> None:
-        pass
-
-    @abstractmethod
-    def visit_variable_expr(self, expr: "Expr") -> None:
-        pass
-
-
-class Expr(ABC):
-    @abstractmethod
-    def accept(self, visitor: ExprVisitor) -> None:
-        pass
+class Expr:
+    pass
 
 
 @dataclass
 class Binary(Expr):
-    left: Final[Expr]
-    operator: Final[Token]
-    right: Final[Expr]
-
-    @override
-    def accept(self, visitor: ExprVisitor) -> None:
-        return visitor.visit_binary_expr(self)
+    left: Expr
+    operator: Token
+    right: Expr
 
 
 @dataclass
 class Grouping(Expr):
-    expression: Final[Expr]
-
-    @override
-    def accept(self, visitor: ExprVisitor) -> None:
-        return visitor.visit_grouping_expr(self)
+    expression: Expr
 
 
 @dataclass
 class Literal(Expr):
-    value: Final[object]
-
-    @override
-    def accept(self, visitor: ExprVisitor) -> None:
-        return visitor.visit_literal_expr(self)
+    value: object
 
 
 @dataclass
 class Unary(Expr):
-    operator: Final[Token]
-    right: Final[Expr]
-
-    @override
-    def accept(self, visitor: ExprVisitor) -> None:
-        return visitor.visit_unary_expr(self)
+    operator: Token
+    right: Expr
 
 
 @dataclass
 class Variable(Expr):
-    name: Final[Token]
-
-    @override
-    def accept(self, visitor: ExprVisitor) -> None:
-        return visitor.visit_variable_expr(self)
+    name: Token

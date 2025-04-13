@@ -1,5 +1,6 @@
-from typing import Any, override
-from plox.expr import Binary, Expr, ExprVisitor, Grouping, Literal, Unary
+from typing import Any
+from plox.ast_printer import ast_string
+from plox.expr import Binary, Expr, Grouping, Literal, Unary, Variable
 from plox.token import Token
 from plox.token_type import TokenType
 
@@ -16,7 +17,7 @@ class LoxRuntimeError(RuntimeError):
         return super().__repr__()
 
 
-class Interpreter(ExprVisitor):
+class Interpreter:
     def check_if_number(self, operator: Token, left: Any, right: Any) -> None:
         if isinstance(left, int | float) and isinstance(right, int | float):
             return
@@ -40,78 +41,44 @@ class Interpreter(ExprVisitor):
 
         return str(obj)
 
-    @override
-    def visit_binary_expr(self, expr: Binary) -> object:
-        left: Any = self.evaluate(expr.left)
-        right: Any = self.evaluate(expr.right)
-
-        if expr.operator.type == TokenType.PLUS:
-            if (isinstance(left, int | float) and isinstance(right, int | float)) or (
-                isinstance(left, str) and isinstance(right, str)
-            ):
-                return left + right
-            raise RuntimeError(expr.operator, "Operands must be two strings or two numeric objects.")
-        elif expr.operator.type == TokenType.MINUS:
-            self.check_if_number(expr.operator, left, right)
-            return left - right
-        elif expr.operator.type == TokenType.SLASH:
-            self.check_if_number(expr.operator, left, right)
-            return left / right
-        elif expr.operator.type == TokenType.STAR:
-            self.check_if_number(expr.operator, left, right)
-            return left * right
-        elif expr.operator.type == TokenType.GREATER:
-            self.check_if_number(expr.operator, left, right)
-            return left > right
-        elif expr.operator.type == TokenType.GREATER_EQUAL:
-            self.check_if_number(expr.operator, left, right)
-            return left >= right
-        elif expr.operator.type == TokenType.LESS:
-            self.check_if_number(expr.operator, left, right)
-            return left < right
-        elif expr.operator.type == TokenType.LESS_EQUAL:
-            self.check_if_number(expr.operator, left, right)
-            return left <= right
-        elif expr.operator.type == TokenType.BANG_EQUAL:
-            self.check_if_number(expr.operator, left, right)
-            return not self.is_equal(left, right)
-        elif expr.operator.type == TokenType.EQUAL_EQUAL:
-            self.check_if_number(expr.operator, left, right)
-            return self.is_equal(left, right)
-
-        return None
-
     def evaluate(self, expr: Expr) -> Any:
-        return expr.accept(self)
-
-    @override
-    def visit_grouping_expr(self, expr: Grouping) -> object:
-        return self.evaluate(expr.expression)
-
-    @override
-    def visit_literal_expr(self, expr: Literal) -> object:
-        return expr.value
-
-    @staticmethod
-    def is_truthy(obj: Any) -> bool:
-        return bool(obj)
-
-    @override
-    def visit_unary_expr(self, expr: Unary) -> object:
-        right = self.evaluate(expr.right)
-        if expr.operator.type is TokenType.BANG:
-            return not self.is_truthy(right)
-        if expr.operator.type is TokenType.MINUS:
-            return -right
-        return None
-
-    @override
-    def visit_variable_expr(self, expr: "Expr") -> None:
-        pass
+        match expr:
+            case Binary(left, op, right):
+                left_val = self.evaluate(left)
+                right_val = self.evaluate(right)
+                if op.type == TokenType.PLUS:
+                    return left_val + right_val
+                elif op.type == TokenType.MINUS:
+                    return left_val - right_val
+                elif op.type == TokenType.STAR:
+                    return left_val * right_val
+                elif op.type == TokenType.SLASH:
+                    if right_val == 0:
+                        raise ValueError("Division by zero")
+                    return left_val / right_val
+                else:
+                    raise ValueError(f"Unknown operator {op.lexeme}")
+            case Literal(value):
+                return value
+            case Unary(op, right):
+                right_val = self.evaluate(right)
+                if op.type == "MINUS":
+                    return -right_val
+                elif op.type == "BANG":
+                    return not right_val
+                else:
+                    raise ValueError(f"Unknown unary operator {op.lexeme}")
+            case Grouping(expression):
+                return self.evaluate(expression)
+            case Variable(name):
+                print(name.lexeme)
+            case _:
+                raise ValueError("Unknown expression type")
 
     def interpret(self, expression: "Expr") -> None:
         try:
+            print(ast_string(expression))
             value: Any = self.evaluate(expression)
             print(value)
-        except RuntimeError as e:
+        except Exception as e:
             print(e)

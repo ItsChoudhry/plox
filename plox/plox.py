@@ -4,7 +4,6 @@ from plox.token import Token
 from plox.token_type import TokenType
 from plox.scanner import Scanner
 from plox.parser import Parser
-from plox.ast_printer import AstPrinter
 
 import logging
 
@@ -48,11 +47,6 @@ class Plox:
 
         parser: Parser = Parser(tokens)
         expression: Expr = parser.parse()
-
-        # print("exprs")
-        # print(expression)
-        # print("printer")
-        print(AstPrinter().print(expression))
         Plox.interpreter.interpret(expression)
 
     def runFile(self, path: str):
