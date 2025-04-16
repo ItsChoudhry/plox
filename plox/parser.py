@@ -81,6 +81,14 @@ class Parser:
             right = self.unary()
             expr = Binary(expr, operator, right)
 
+        if self.match(TokenType.LEFT_PAREN):
+            rightParen: Expr = self.expression()
+            self.consume(TokenType.RIGHT_PAREN, "Expext ')' after expression.")
+
+            operatorParen: Token = Token(TokenType.STAR, "*", None, self.previous().line)
+
+            expr = Binary(expr, operatorParen, rightParen)
+
         return expr
 
     def term(self) -> Expr:
