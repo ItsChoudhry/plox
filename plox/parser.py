@@ -1,4 +1,5 @@
 from typing import Final
+from plox.stmt import Expression, Print, Stmt
 from plox.token import Token
 from plox.expr import Binary, Expr, Grouping, Literal, Unary
 from plox.token_type import TokenType
@@ -15,11 +16,27 @@ class Parser:
         self.tokens: Final[list[Token]] = tokens
         self.current: int = 0
 
-    def parse(self):
-        try:
-            return self.expression()
-        except Exception:
-            return None
+    def parse(self) -> list[Stmt]:
+        stmts: list[Stmt] = []
+        while not self.is_at_end():
+            stmts.append(self.statement())
+
+        return stmts
+
+    def statement(self):
+        if self.match(TokenType.PRINT):
+            return self.print_statement()
+        return self.expression_statement()
+
+    def print_statement(self) -> Stmt:
+        value: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Exprect ';' after value.")
+        return Print(value)
+
+    def expression_statement(self) -> Stmt:
+        expr: Expr = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
+        return Expression(expr)
 
     def synchronize(self) -> None:
         self.advance()

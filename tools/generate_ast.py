@@ -17,6 +17,11 @@ EXPRESSIONS: ASTDict = {
     "Variable": ("name: Token",),
 }
 
+STATEMENTS: ASTDict = {
+    "Expression": ("expression: Expr",),
+    "Print": ("expression: Expr",),
+}
+
 
 INDENTATION = "    "
 
@@ -38,7 +43,7 @@ def define_type(f: TextIO, base_name: str, class_name: str, fields: tuple[str]):
     f.write("\n")
     f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor) -> None:")
     f.write("\n")
-    f.write(f"{INDENTATION*2}return visitor.visit_{class_name.lower()}_{base_name.lower()}(self)")
+    f.write(f"{INDENTATION * 2}return visitor.visit_{class_name.lower()}_{base_name.lower()}(self)")
     f.write("\n")
 
 
@@ -53,7 +58,7 @@ def define_visitor(f: TextIO, base_name: str, types: ASTDict):
             f'{INDENTATION}def visit_{type.lower()}_{base_name.lower()}(self, {base_name.lower()}: "Expr") -> None:'
         )
         f.write("\n")
-        f.write(f"{INDENTATION*2}pass")
+        f.write(f"{INDENTATION * 2}pass")
         f.write("\n\n")
 
 
@@ -81,7 +86,7 @@ def define_ast(output_dir: Path, base_name: str, types: ASTDict):
         f.write("\n")
         f.write(f"{INDENTATION}def accept(self, visitor: {base_name}Visitor) -> None:")
         f.write("\n")
-        f.write(f"{INDENTATION*2}pass")
+        f.write(f"{INDENTATION * 2}pass")
         f.write("\n\n")
 
         for class_name, fields in types.items():
