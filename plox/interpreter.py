@@ -1,6 +1,7 @@
 from typing import Any
 from plox.ast_printer import ast_string
 from plox.expr import Binary, Expr, Grouping, Literal, Unary, Variable
+from plox.stmt import Stmt, Print, Expression
 from plox.token import Token
 from plox.token_type import TokenType
 
@@ -75,10 +76,20 @@ class Interpreter:
             case _:
                 raise ValueError("Unknown expression type")
 
-    def interpret(self, expression: "Expr") -> None:
+    def execute(self, stmt: Stmt):
+        match stmt:
+            case Print(expression):
+                value = self.evaluate(expression)
+                print(str(value))
+            case Expression(expression):
+                self.evaluate(expression)
+            case _:
+                raise ValueError("Unknown statement type")
+
+    def interpret(self, stmts: list[Stmt]) -> None:
         try:
-            print(ast_string(expression))
-            value: Any = self.evaluate(expression)
-            print(value)
+            for stmt in stmts:
+                self.execute(stmt)
+
         except Exception as e:
             print(e)

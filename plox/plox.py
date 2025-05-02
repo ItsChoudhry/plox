@@ -10,7 +10,7 @@ import logging
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
-    from plox.expr import Expr
+    from plox.stmt import Stmt
 
 
 logger = logging.getLogger(__name__)
@@ -46,8 +46,8 @@ class Plox:
         tokens: list[Token] = scanner.scan_tokens()
 
         parser: Parser = Parser(tokens)
-        expression: Expr = parser.parse()
-        Plox.interpreter.interpret(expression)
+        statements: list[Stmt] = parser.parse()
+        Plox.interpreter.interpret(statements)
 
     def runFile(self, path: str):
         with open(path) as f:
