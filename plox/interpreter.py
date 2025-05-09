@@ -1,9 +1,9 @@
 from typing import Any
-from plox.ast_printer import ast_string
 from plox.expr import Binary, Expr, Grouping, Literal, Unary, Variable
-from plox.stmt import Stmt, Print, Expression
+from plox.stmt import Stmt, Print, Expression, Var
 from plox.token import Token
 from plox.token_type import TokenType
+from plox.environment import Environment
 
 
 class LoxRuntimeError(RuntimeError):
@@ -19,6 +19,8 @@ class LoxRuntimeError(RuntimeError):
 
 
 class Interpreter:
+    environment: Environment = Environment()
+
     def check_if_number(self, operator: Token, left: Any, right: Any) -> None:
         if isinstance(left, int | float) and isinstance(right, int | float):
             return
@@ -83,6 +85,9 @@ class Interpreter:
                 print(str(value))
             case Expression(expression):
                 self.evaluate(expression)
+            case Var(name, initializer):
+                value = self.evaluate(initializer) if initializer else None
+                self.environment.define(name.lexeme, value)
             case _:
                 raise ValueError("Unknown statement type")
 
@@ -90,6 +95,5 @@ class Interpreter:
         try:
             for stmt in stmts:
                 self.execute(stmt)
-
         except Exception as e:
             print(e)

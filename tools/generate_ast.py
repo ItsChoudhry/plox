@@ -14,7 +14,7 @@ EXPRESSIONS: ASTDict = {
     "Grouping": ("expression: Expr",),
     "Literal": ("value: object",),
     "Unary": ("operator: Token", "right: Expr"),
-    "Variable": ("name: Token",),
+    "Variable": ("name: Token", "initializer Expr"),
 }
 
 STATEMENTS: ASTDict = {

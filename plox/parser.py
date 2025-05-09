@@ -1,7 +1,7 @@
 from typing import Final
-from plox.stmt import Expression, Print, Stmt
+from plox.stmt import Expression, Print, Stmt, Var
 from plox.token import Token
-from plox.expr import Binary, Expr, Grouping, Literal, Unary
+from plox.expr import Binary, Expr, Grouping, Literal, Unary, Variable
 from plox.token_type import TokenType
 
 
@@ -12,6 +12,34 @@ class ParseError(RuntimeError):
 
 
 class Parser:
+    """
+    program     = declaration* eof ;
+
+    declaration = varDecl
+                | statement ;
+    varDecl     = "var" IDENTIFIER ( "=" expression )? ";" ;
+    statement   = exprStmt
+                | printStmt
+                | block ;
+    block       = "{" declaration* "}" ;
+
+    exprStmt    = expression ";" ;
+    printStmt   = "print" expression ";" ;
+
+    expression  = assignment ;
+    assignment  = identifier ( "=" assignment )?
+                | equality ;
+    equality   → comparison ( ( "!=" | "==" ) comparison )*
+    comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+    term       → factor ( ( "-" | "+" ) factor )*
+    factor     → unary ( ( "/" | "*" ) unary | "(" expression ")" )*
+    unary      → ( "!" | "-" ) unary
+               | primary
+    primary    → NUMBER | STRING | "false" | "true" | "nil"
+               | "(" expression ")"
+               | IDENTIFIER ;
+    """
+
     def __init__(self, tokens: list[Token]) -> None:
         self.tokens: Final[list[Token]] = tokens
         self.current: int = 0
@@ -19,9 +47,29 @@ class Parser:
     def parse(self) -> list[Stmt]:
         stmts: list[Stmt] = []
         while not self.is_at_end():
-            stmts.append(self.statement())
+            stmts.append(self.declaration())
 
         return stmts
+
+    def declaration(self):
+        try:
+            if self.match(TokenType.VAR):
+                return self.varDeclaration()
+            return self.statement()
+        except ParseError:
+            self.synchronize()
+            return None
+
+    def varDeclaration(self):
+        name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
+
+        initializer: Expr = None
+
+        if self.match(TokenType.EQUAL):
+            initializer = self.expression()
+
+            self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+            return Var(name, initializer)
 
     def statement(self):
         if self.match(TokenType.PRINT):
@@ -75,6 +123,9 @@ class Parser:
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)
+
+        if self.match(TokenType.IDENTIFIER):
+            return Variable(self.previous())
 
         if self.match(TokenType.LEFT_PAREN):
             expr: Expr = self.expression()
