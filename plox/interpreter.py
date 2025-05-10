@@ -74,7 +74,7 @@ class Interpreter:
             case Grouping(expression):
                 return self.evaluate(expression)
             case Variable(name):
-                print(name.lexeme)
+                return self.environment.get(name)
             case _:
                 raise ValueError("Unknown expression type")
 
@@ -86,7 +86,7 @@ class Interpreter:
             case Expression(expression):
                 self.evaluate(expression)
             case Var(name, initializer):
-                value = self.evaluate(initializer) if initializer else None
+                value = self.evaluate(initializer) if initializer else "NIL"
                 self.environment.define(name.lexeme, value)
             case _:
                 raise ValueError("Unknown statement type")

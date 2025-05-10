@@ -5,13 +5,13 @@ from typing import Any
 
 
 class Environment:
-    values: dict[str, object]
+    values: dict[str, Any] = {}
 
     def define(self, name: str, value: Optional[Any]):
-        self.values[name] = value
+        Environment.values[name] = value
 
-    def get(self, name: Token):
-        if name.lexeme in self.values:
-            return self.values[name.lexeme]
+    def get(self, name: Token) -> Any:
+        if name.lexeme in Environment.values:
+            return Environment.values[name.lexeme]
 
-        raise RuntimeError(name, "Undefined variable '" + name.lexeme + "'.")
+        raise RuntimeError("Undefined variable '" + name.lexeme + "'.")

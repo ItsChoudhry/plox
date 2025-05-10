@@ -68,8 +68,8 @@ class Parser:
         if self.match(TokenType.EQUAL):
             initializer = self.expression()
 
-            self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
-            return Var(name, initializer)
+        self.consume(TokenType.SEMICOLON, "Expect ';' after variable declaration")
+        return Var(name, initializer)
 
     def statement(self):
         if self.match(TokenType.PRINT):
@@ -119,7 +119,7 @@ class Parser:
         if self.match(TokenType.TRUE):
             return Literal(True)
         if self.match(TokenType.NIL):
-            return Literal(None)
+            return Literal("NIL")
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)

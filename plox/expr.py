@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from typing import Any
 from plox.token import Token
 
 
@@ -20,7 +21,7 @@ class Grouping(Expr):
 
 @dataclass
 class Literal(Expr):
-    value: object
+    value: Any
 
 
 @dataclass
