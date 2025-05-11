@@ -1,7 +1,7 @@
 from typing import Final
-from plox.stmt import Expression, Print, Stmt, Var
+from plox.stmt import Block, Expression, Print, Stmt, Var
 from plox.token import Token
-from plox.expr import Binary, Expr, Grouping, Literal, Unary, Variable
+from plox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
 from plox.token_type import TokenType
 
 
@@ -74,6 +74,8 @@ class Parser:
     def statement(self):
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.LEFT_CURLY_BRACE):
+            return Block(self.block())
         return self.expression_statement()
 
     def print_statement(self) -> Stmt:
@@ -85,6 +87,15 @@ class Parser:
         expr: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Expect ';' after expression.")
         return Expression(expr)
+
+    def block(self) -> list[Stmt]:
+        statements: list[Stmt] = []
+
+        while not self.check(TokenType.RIGHT_CURLY_BRACE) and not self.is_at_end():
+            statements.append(self.declaration())
+
+        self.consume(TokenType.RIGHT_CURLY_BRACE, "Expect '}' after block.")
+        return statements
 
     def synchronize(self) -> None:
         self.advance()
@@ -211,5 +222,20 @@ class Parser:
             expr = Binary(expr, operator, right)
         return expr
 
+    def assignment(self) -> Expr:
+        expr = self.equality()
+
+        if self.match(TokenType.EQUAL):
+            equals = self.previous()
+            value = self.assignment()
+
+            if isinstance(expr, Variable):
+                name = expr.name
+                return Assign(name, value)
+
+            self.error(equals, "Invalid assignment target.")
+
+        return expr
+
     def expression(self) -> Expr:
-        return self.equality()
+        return self.assignment()

@@ -49,10 +49,11 @@ class Plox:
         statements: list[Stmt] = parser.parse()
         Plox.interpreter.interpret(statements)
 
-    def runFile(self, path: str):
+    @staticmethod
+    def runFile(path: str):
         with open(path) as f:
             file = f.read(-1)
-            self.run(file)
+            Plox.run(file)
 
             if Plox.had_error:
                 sys.exit(65)

@@ -15,7 +15,7 @@ def main():
         print("Usage: plox [script]")
         sys.exit(64)
     elif len(args) == 1:
-        Plox.run(args[0])
+        Plox.runFile(args[0])
     else:
         Plox.runPrompt()
 

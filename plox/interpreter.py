@@ -1,6 +1,6 @@
 from typing import Any
-from plox.expr import Binary, Expr, Grouping, Literal, Unary, Variable
-from plox.stmt import Stmt, Print, Expression, Var
+from plox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
+from plox.stmt import Block, Stmt, Print, Expression, Var
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.environment import Environment
@@ -75,6 +75,10 @@ class Interpreter:
                 return self.evaluate(expression)
             case Variable(name):
                 return self.environment.get(name)
+            case Assign(name, value):
+                value = self.evaluate(value)
+                self.environment.assign(name, value)
+                return value
             case _:
                 raise ValueError("Unknown expression type")
 
@@ -84,12 +88,24 @@ class Interpreter:
                 value = self.evaluate(expression)
                 print(str(value))
             case Expression(expression):
-                self.evaluate(expression)
+                print(self.evaluate(expression))
             case Var(name, initializer):
-                value = self.evaluate(initializer) if initializer else "NIL"
+                value = self.evaluate(initializer) if initializer else None
                 self.environment.define(name.lexeme, value)
+            case Block(statements):
+                self.executeBlock(statements, Environment(self.environment))
             case _:
                 raise ValueError("Unknown statement type")
+
+    def executeBlock(self, statements: list[Stmt], environment: Environment):
+        previous = self.environment
+        try:
+            self.environment = environment
+
+            for statement in statements:
+                self.execute(statement)
+        finally:
+            self.environment = previous
 
     def interpret(self, stmts: list[Stmt]) -> None:
         try:
