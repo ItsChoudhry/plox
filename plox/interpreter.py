@@ -1,6 +1,6 @@
 from typing import Any
 from plox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-from plox.stmt import Block, Stmt, Print, Expression, Var
+from plox.stmt import Block, If, Stmt, Print, Expression, Var
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.environment import Environment
@@ -43,6 +43,14 @@ class Interpreter:
             return str(obj).lower()
 
         return str(obj)
+
+    @staticmethod
+    def is_truthy(obj: Any) -> bool:
+        if obj is None:
+            return False
+        elif isinstance(obj, bool):
+            return bool(obj)
+        return True
 
     def evaluate(self, expr: Expr) -> Any:
         match expr:
@@ -94,6 +102,11 @@ class Interpreter:
                 self.environment.define(name.lexeme, value)
             case Block(statements):
                 self.executeBlock(statements, Environment(self.environment))
+            case If(condition, thenBranch, elseBranch):
+                if self.is_truthy(self.evaluate(condition)):
+                    self.execute(thenBranch)
+                else:
+                    self.execute(elseBranch)
             case _:
                 raise ValueError("Unknown statement type")
 

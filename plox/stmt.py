@@ -26,3 +26,10 @@ class Var(Stmt):
 @dataclass
 class Block(Stmt):
     statements: list[Stmt]
+
+
+@dataclass
+class If(Stmt):
+    condition: Expr
+    thenBranch: Stmt
+    elseBranch: Stmt

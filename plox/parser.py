@@ -1,7 +1,7 @@
 from typing import Final
-from plox.stmt import Block, Expression, Print, Stmt, Var
+from plox.stmt import Block, Expression, If, Print, Stmt, Var
 from plox.token import Token
-from plox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
+from plox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
 from plox.token_type import TokenType
 
 
@@ -19,25 +19,30 @@ class Parser:
                 | statement ;
     varDecl     = "var" IDENTIFIER ( "=" expression )? ";" ;
     statement   = exprStmt
+                | ifStmt
                 | printStmt
                 | block ;
+    ifStmt      = "if" "(" expression ")" statement
+                ( "else" statement )? ;
     block       = "{" declaration* "}" ;
 
     exprStmt    = expression ";" ;
     printStmt   = "print" expression ";" ;
 
     expression  = assignment ;
-    assignment  = identifier ( "=" assignment )?
-                | equality ;
-    equality   → comparison ( ( "!=" | "==" ) comparison )*
-    comparison → term ( ( ">" | ">=" | "<" | "<=" ) term )*
-    term       → factor ( ( "-" | "+" ) factor )*
-    factor     → unary ( ( "/" | "*" ) unary | "(" expression ")" )*
-    unary      → ( "!" | "-" ) unary
-               | primary
-    primary    → NUMBER | STRING | "false" | "true" | "nil"
-               | "(" expression ")"
-               | IDENTIFIER ;
+    assignment  = IDENTIFIER "=" assignment
+                | logic_or ;
+    logic_or    → logic_and ( "or" logic_and )* ;
+    logic_and   → equality ( "and" equality )* ;
+    equality    → comparison ( ( "!=" | "==" ) comparison )*
+    comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )*
+    term        → factor ( ( "-" | "+" ) factor )*
+    factor      → unary ( ( "/" | "*" ) unary | "(" expression ")" )*
+    unary       → ( "!" | "-" ) unary
+                | primary
+    primary     → NUMBER | STRING | "false" | "true" | "nil"
+                | "(" expression ")"
+                | IDENTIFIER ;
     """
 
     def __init__(self, tokens: list[Token]) -> None:
@@ -58,7 +63,6 @@ class Parser:
             return self.statement()
         except ParseError:
             self.synchronize()
-            return None
 
     def varDeclaration(self):
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -72,6 +76,8 @@ class Parser:
         return Var(name, initializer)
 
     def statement(self):
+        if self.match(TokenType.IF):
+            return self.if_statement()
         if self.match(TokenType.PRINT):
             return self.print_statement()
         if self.match(TokenType.LEFT_CURLY_BRACE):
@@ -82,6 +88,19 @@ class Parser:
         value: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Exprect ';' after value.")
         return Print(value)
+
+    def if_statement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")
+        condition = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after 'if' condition.")
+
+        thenBranch: Stmt = self.statement()
+        elseBranch: Stmt | None = None
+
+        if self.match(TokenType.ELSE):
+            elseBranch: Stmt = self.statement()
+
+        return If(condition, thenBranch, elseBranch)
 
     def expression_statement(self) -> Stmt:
         expr: Expr = self.expression()
@@ -223,7 +242,7 @@ class Parser:
         return expr
 
     def assignment(self) -> Expr:
-        expr = self.equality()
+        expr = self.logic_or()
 
         if self.match(TokenType.EQUAL):
             equals = self.previous()
@@ -235,6 +254,24 @@ class Parser:
 
             self.error(equals, "Invalid assignment target.")
 
+        return expr
+
+    def logic_or(self) -> Expr:
+        expr: Expr = self.logic_and()
+
+        while self.match(TokenType.OR):
+            operator: Token = self.previous()
+            right: Expr = self.equality()
+            expr = Logical(expr, operator, right)
+        return expr
+
+    def logic_and(self) -> Expr:
+        expr: Expr = self.equality()
+
+        while self.match(TokenType.OR):
+            operator: Token = self.previous()
+            right: Expr = self.equality()
+            expr = Logical(expr, operator, right)
         return expr
 
     def expression(self) -> Expr:
