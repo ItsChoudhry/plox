@@ -1,5 +1,5 @@
 from typing import Final
-from plox.stmt import Block, Expression, If, Print, Stmt, Var
+from plox.stmt import Block, Expression, If, Print, Stmt, Var, While
 from plox.token import Token
 from plox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
 from plox.token_type import TokenType
@@ -13,24 +13,25 @@ class ParseError(RuntimeError):
 
 class Parser:
     """
-    program     = declaration* eof ;
+    program     → declaration* eof ;
 
-    declaration = varDecl
+    declaration → varDecl
                 | statement ;
-    varDecl     = "var" IDENTIFIER ( "=" expression )? ";" ;
-    statement   = exprStmt
+    varDecl     → "var" IDENTIFIER ( "=" expression )? ";" ;
+    statement   → exprStmt
                 | ifStmt
                 | printStmt
                 | block ;
-    ifStmt      = "if" "(" expression ")" statement
+    whileStmt   → "while" "(" expression ")" statement ;
+    ifStmt      → "if" "(" expression ")" statement
                 ( "else" statement )? ;
-    block       = "{" declaration* "}" ;
+    block       → "{" declaration* "}" ;
 
-    exprStmt    = expression ";" ;
-    printStmt   = "print" expression ";" ;
+    exprStmt    → expression ";" ;
+    printStmt   → "print" expression ";" ;
 
-    expression  = assignment ;
-    assignment  = IDENTIFIER "=" assignment
+    expression  → assignment ;
+    assignment  → IDENTIFIER "=" assignment
                 | logic_or ;
     logic_or    → logic_and ( "or" logic_and )* ;
     logic_and   → equality ( "and" equality )* ;
@@ -80,9 +81,18 @@ class Parser:
             return self.if_statement()
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.WHILE):
+            return self.while_statement()
         if self.match(TokenType.LEFT_CURLY_BRACE):
             return Block(self.block())
         return self.expression_statement()
+
+    def while_statement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Exprect '(' after 'while'.")
+        condition: Expr = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Exprect ')' after 'while'.")
+        body = self.statement()
+        return While(condition, body)
 
     def print_statement(self) -> Stmt:
         value: Expr = self.expression()
@@ -149,7 +159,7 @@ class Parser:
         if self.match(TokenType.TRUE):
             return Literal(True)
         if self.match(TokenType.NIL):
-            return Literal("NIL")
+            return Literal(None)
 
         if self.match(TokenType.NUMBER, TokenType.STRING):
             return Literal(self.previous().literal)

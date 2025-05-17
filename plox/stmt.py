@@ -24,6 +24,12 @@ class Var(Stmt):
 
 
 @dataclass
+class While(Stmt):
+    condition: Expr
+    body: Stmt
+
+
+@dataclass
 class Block(Stmt):
     statements: list[Stmt]
 

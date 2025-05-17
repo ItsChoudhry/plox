@@ -1,6 +1,6 @@
 from typing import Any
-from plox.expr import Assign, Binary, Expr, Grouping, Literal, Unary, Variable
-from plox.stmt import Block, If, Stmt, Print, Expression, Var
+from plox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
+from plox.stmt import Block, If, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.environment import Environment
@@ -71,6 +71,15 @@ class Interpreter:
                     raise ValueError(f"Unknown operator {op.lexeme}")
             case Literal(value):
                 return value
+            case Logical(left, op, right):
+                logic_left: Any = self.evaluate(left)
+                if op.type == TokenType.OR:
+                    if self.is_truthy(logic_left):
+                        return logic_left
+                else:
+                    if not self.is_truthy(logic_left):
+                        return logic_left
+                return self.evaluate(right)
             case Unary(op, right):
                 right_val = self.evaluate(right)
                 if op.type == "MINUS":
@@ -107,6 +116,9 @@ class Interpreter:
                     self.execute(thenBranch)
                 else:
                     self.execute(elseBranch)
+            case While(condition, body):
+                while self.is_truthy(self.evaluate(condition)):
+                    self.execute(body)
             case _:
                 raise ValueError("Unknown statement type")
 
