@@ -67,6 +67,14 @@ class Interpreter:
                     if right_val == 0:
                         raise ValueError("Division by zero")
                     return left_val / right_val
+                elif op.type == TokenType.LESS:
+                    return left_val < right_val
+                elif op.type == TokenType.LESS_EQUAL:
+                    return left_val <= right_val
+                elif op.type == TokenType.GREATER:
+                    return left_val > right_val
+                elif op.type == TokenType.GREATER_EQUAL:
+                    return left_val >= right_val
                 else:
                     raise ValueError(f"Unknown operator {op.lexeme}")
             case Literal(value):
@@ -105,7 +113,7 @@ class Interpreter:
                 value = self.evaluate(expression)
                 print(str(value))
             case Expression(expression):
-                print(self.evaluate(expression))
+                self.evaluate(expression)
             case Var(name, initializer):
                 value = self.evaluate(initializer) if initializer else None
                 self.environment.define(name.lexeme, value)

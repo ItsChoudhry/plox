@@ -22,6 +22,9 @@ class Parser:
                 | ifStmt
                 | printStmt
                 | block ;
+    forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
+                 expression? ";"
+                 expression? ")" statement ;
     whileStmt   → "while" "(" expression ")" statement ;
     ifStmt      → "if" "(" expression ")" statement
                 ( "else" statement )? ;
@@ -77,6 +80,8 @@ class Parser:
         return Var(name, initializer)
 
     def statement(self):
+        if self.match(TokenType.FOR):
+            return self.for_statement()
         if self.match(TokenType.IF):
             return self.if_statement()
         if self.match(TokenType.PRINT):
@@ -86,6 +91,41 @@ class Parser:
         if self.match(TokenType.LEFT_CURLY_BRACE):
             return Block(self.block())
         return self.expression_statement()
+
+    def for_statement(self) -> Stmt:
+        self.consume(TokenType.LEFT_PAREN, "Exprect '(' after 'while'.")
+
+        initializer: Stmt | None
+        if self.match(TokenType.SEMICOLON):
+            initializer = None
+        elif self.match(TokenType.VAR):
+            initializer = self.varDeclaration()
+        else:
+            initializer = self.expression_statement()
+
+        condition: Expr | None = None
+        if not self.check(TokenType.SEMICOLON):
+            condition = self.expression()
+        self.consume(TokenType.SEMICOLON, "Expect ';' after loop condition")
+
+        increament: Expr | None = None
+        if not self.check(TokenType.RIGHT_PAREN):
+            increament = self.expression()
+        self.consume(TokenType.RIGHT_PAREN, "Exprect ')' after for clauses.")
+
+        body: Stmt = self.statement()
+
+        if increament is not None:
+            body = Block([body, Expression(increament)])
+
+        if condition is None:
+            condition = Literal(True)
+        body = While(condition, body)
+
+        if initializer is not None:
+            body = Block([initializer, body])
+
+        return body
 
     def while_statement(self) -> Stmt:
         self.consume(TokenType.LEFT_PAREN, "Exprect '(' after 'while'.")
