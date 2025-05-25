@@ -146,7 +146,7 @@ class Interpreter:
                 while self.is_truthy(self.evaluate(condition)):
                     self.execute(body)
             case Function(name, params, body):
-                function: PloxFunction = PloxFunction(stmt)
+                function: PloxFunction = PloxFunction(stmt, self.environment)
                 self.environment.define(name.lexeme, function)
             case Return(keyword, value):
                 return_value: Any = None
@@ -196,10 +196,12 @@ class PloxCallable:
 @dataclass
 class PloxFunction(PloxCallable):
     declaraction: Function
+    closure: Environment
 
-    def __init__(self, declaraction: Function) -> None:
+    def __init__(self, declaraction: Function, closure: Environment) -> None:
         super().__init__()
         self.declaraction = declaraction
+        self.closure = closure
 
     @override
     def arity(self):
@@ -211,7 +213,7 @@ class PloxFunction(PloxCallable):
 
     @override
     def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
-        environment: Environment = Environment(interpreter.globals)
+        environment: Environment = Environment(self.closure)
         for i, param in enumerate(self.declaraction.params):
             environment.define(param.lexeme, arguments[i])
 
