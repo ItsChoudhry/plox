@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import time
 from typing import Any, override
 from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
-from plox.stmt import Block, Function, If, Stmt, Print, Expression, Var, While
+from plox.stmt import Block, Function, If, Return, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.environment import Environment
@@ -140,7 +140,7 @@ class Interpreter:
             case If(condition, thenBranch, elseBranch):
                 if self.is_truthy(self.evaluate(condition)):
                     self.execute(thenBranch)
-                else:
+                elif elseBranch is not None:
                     self.execute(elseBranch)
             case While(condition, body):
                 while self.is_truthy(self.evaluate(condition)):
@@ -148,6 +148,13 @@ class Interpreter:
             case Function(name, params, body):
                 function: PloxFunction = PloxFunction(stmt)
                 self.environment.define(name.lexeme, function)
+            case Return(keyword, value):
+                return_value: Any = None
+
+                if value is not None:
+                    return_value = self.evaluate(value)
+
+                raise PloxReturn(return_value)
             case _:
                 raise ValueError("Unknown statement type")
 
@@ -167,6 +174,12 @@ class Interpreter:
                 self.execute(stmt)
         except Exception as e:
             print(e)
+
+
+class PloxReturn(Exception):
+    def __init__(self, value):
+        super().__init__()
+        self.value = value
 
 
 class PloxCallable:
@@ -202,7 +215,10 @@ class PloxFunction(PloxCallable):
         for i, param in enumerate(self.declaraction.params):
             environment.define(param.lexeme, arguments[i])
 
-        interpreter.executeBlock(self.declaraction.body, environment)
+        try:
+            interpreter.executeBlock(self.declaraction.body, environment)
+        except PloxReturn as return_value:
+            return return_value.value
         return None
 
 

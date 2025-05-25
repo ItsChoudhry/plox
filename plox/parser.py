@@ -1,5 +1,5 @@
 from typing import Final
-from plox.stmt import Block, Expression, Function, If, Print, Stmt, Var, While
+from plox.stmt import Block, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
 from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
 from plox.token_type import TokenType
@@ -23,8 +23,11 @@ class Parser:
     parameters  → IDENTIFIER ("," IDENTIFIER)* ;
     varDecl     → "var" IDENTIFIER ( "=" expression )? ";" ;
     statement   → exprStmt
+                | forStmt
                 | ifStmt
                 | printStmt
+                | returnStmt
+                | whileStmt
                 | block ;
     forStmt        → "for" "(" ( varDecl | exprStmt | ";" )
                  expression? ";"
@@ -36,7 +39,7 @@ class Parser:
 
     exprStmt    → expression ";" ;
     printStmt   → "print" expression ";" ;
-
+    exprStmt    → "return" expression? ";" ;
     expression  → assignment ;
     assignment  → IDENTIFIER "=" assignment
                 | logic_or ;
@@ -112,6 +115,8 @@ class Parser:
             return self.if_statement()
         if self.match(TokenType.PRINT):
             return self.print_statement()
+        if self.match(TokenType.RETURN):
+            return self.return_statement()
         if self.match(TokenType.WHILE):
             return self.while_statement()
         if self.match(TokenType.LEFT_CURLY_BRACE):
@@ -164,6 +169,16 @@ class Parser:
         value: Expr = self.expression()
         self.consume(TokenType.SEMICOLON, "Exprect ';' after value.")
         return Print(value)
+
+    def return_statement(self) -> Stmt:
+        keyword: Token = self.previous()
+        value: Expr | None = None
+
+        if not self.check(TokenType.SEMICOLON):
+            value = self.expression()
+
+        self.consume(TokenType.SEMICOLON, "Exprect ';' after return value.")
+        return Return(keyword, value)
 
     def if_statement(self) -> Stmt:
         self.consume(TokenType.LEFT_PAREN, "Expect '(' after 'if'.")

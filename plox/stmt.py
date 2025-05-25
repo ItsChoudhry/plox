@@ -18,6 +18,12 @@ class Print(Stmt):
 
 
 @dataclass
+class Return(Stmt):
+    keyword: Token
+    value: Expr | None
+
+
+@dataclass
 class Var(Stmt):
     name: Token
     initializer: Expr
