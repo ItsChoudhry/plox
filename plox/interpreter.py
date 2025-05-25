@@ -1,6 +1,8 @@
-from typing import Any
-from plox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
-from plox.stmt import Block, If, Stmt, Print, Expression, Var, While
+from dataclasses import dataclass
+import time
+from typing import Any, override
+from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from plox.stmt import Block, Function, If, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.environment import Environment
@@ -19,7 +21,11 @@ class LoxRuntimeError(RuntimeError):
 
 
 class Interpreter:
-    environment: Environment = Environment()
+    def __init__(self):
+        self.globals = Environment()
+        self.environment = self.globals
+
+        self.globals.define("clock", NativeClockFunction())
 
     def check_if_number(self, operator: Token, left: Any, right: Any) -> None:
         if isinstance(left, int | float) and isinstance(right, int | float):
@@ -104,6 +110,18 @@ class Interpreter:
                 value = self.evaluate(value)
                 self.environment.assign(name, value)
                 return value
+            case Call(callee, paren, arguments):
+                callee_value = self.evaluate(callee)
+
+                if not isinstance(callee_value, PloxCallable):
+                    raise RuntimeError("Can only call functions and classes.")
+
+                evaluated_args = [self.evaluate(arg) for arg in arguments]
+
+                if len(arguments) != callee_value.arity():
+                    pass
+
+                return callee_value.call(self, evaluated_args)
             case _:
                 raise ValueError("Unknown expression type")
 
@@ -127,6 +145,9 @@ class Interpreter:
             case While(condition, body):
                 while self.is_truthy(self.evaluate(condition)):
                     self.execute(body)
+            case Function(name, params, body):
+                function: PloxFunction = PloxFunction(stmt)
+                self.environment.define(name.lexeme, function)
             case _:
                 raise ValueError("Unknown statement type")
 
@@ -146,3 +167,55 @@ class Interpreter:
                 self.execute(stmt)
         except Exception as e:
             print(e)
+
+
+class PloxCallable:
+    def arity(self) -> int:
+        raise NotImplementedError("Subclasses must implement arity")
+
+    def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
+        raise NotImplementedError("Subclasses must implement call")
+
+    def __str__(self) -> str:
+        return "<callable>"
+
+
+@dataclass
+class PloxFunction(PloxCallable):
+    declaraction: Function
+
+    def __init__(self, declaraction: Function) -> None:
+        super().__init__()
+        self.declaraction = declaraction
+
+    @override
+    def arity(self):
+        return len(self.declaraction.params)
+
+    @override
+    def __str__(self) -> str:
+        return f"<fn {self.declaraction.name.lexeme} >"
+
+    @override
+    def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
+        environment: Environment = Environment(interpreter.globals)
+        for i, param in enumerate(self.declaraction.params):
+            environment.define(param.lexeme, arguments[i])
+
+        interpreter.executeBlock(self.declaraction.body, environment)
+        return None
+
+
+# Native clock function
+class NativeClockFunction(PloxCallable):
+    @override
+    def arity(self) -> int:
+        return 0  # Takes no arguments
+
+    @override
+    def call(self, interpreter, arguments: list[Any]) -> float:
+        return time.time()  # Python's time.time() is equivalent to System.currentTimeMillis() / 1000.0
+
+    @override
+    def __str__(self) -> str:
+        return "<native fn>"

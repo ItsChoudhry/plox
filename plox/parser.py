@@ -1,7 +1,7 @@
 from typing import Final
-from plox.stmt import Block, Expression, If, Print, Stmt, Var, While
+from plox.stmt import Block, Expression, Function, If, Print, Stmt, Var, While
 from plox.token import Token
-from plox.expr import Assign, Binary, Expr, Grouping, Literal, Logical, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
 from plox.token_type import TokenType
 
 
@@ -15,8 +15,12 @@ class Parser:
     """
     program     → declaration* eof ;
 
-    declaration → varDecl
+    declaration → funDecl
+                | varDecl
                 | statement ;
+    funDecl     → "fun" function ;
+    function    → IDENTIFIER "(" parameters? ")" block ;
+    parameters  → IDENTIFIER ("," IDENTIFIER)* ;
     varDecl     → "var" IDENTIFIER ( "=" expression )? ";" ;
     statement   → exprStmt
                 | ifStmt
@@ -42,8 +46,9 @@ class Parser:
     comparison  → term ( ( ">" | ">=" | "<" | "<=" ) term )*
     term        → factor ( ( "-" | "+" ) factor )*
     factor      → unary ( ( "/" | "*" ) unary | "(" expression ")" )*
-    unary       → ( "!" | "-" ) unary
-                | primary
+    unary       → ( "!" | "-" ) unary | call
+    call        → primary ( "(" arguments? ")" )*;
+    arguments   → expression ( "," expression )* ;
     primary     → NUMBER | STRING | "false" | "true" | "nil"
                 | "(" expression ")"
                 | IDENTIFIER ;
@@ -62,11 +67,32 @@ class Parser:
 
     def declaration(self):
         try:
+            if self.match(TokenType.FUN):
+                return self.function("function")
             if self.match(TokenType.VAR):
                 return self.varDeclaration()
             return self.statement()
         except ParseError:
             self.synchronize()
+
+    def function(self, kind: str) -> Stmt:
+        name = self.consume(TokenType.IDENTIFIER, f"Expect {kind} name.")
+
+        self.consume(TokenType.LEFT_PAREN, f"Expect '(' after {kind} name.")
+        params: list[Token] = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            while True:
+                if len(params) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 parameters.")
+
+                params.append(self.consume(TokenType.IDENTIFIER, "Expect parameter name."))
+                if not self.match(TokenType.COMMA):
+                    break
+
+        self.consume(TokenType.RIGHT_PAREN, "Expect ')' after parameters.")
+        self.consume(TokenType.LEFT_CURLY_BRACE, f"Expect '{{' before {kind} body.")
+        body = self.block()
+        return Function(name, params, body)
 
     def varDeclaration(self):
         name = self.consume(TokenType.IDENTIFIER, "Expect variable name.")
@@ -219,7 +245,31 @@ class Parser:
             operator: Token = self.previous()
             right: Expr = self.unary()
             return Unary(operator, right)
-        return self.primary()
+        return self.call()
+
+    def call(self) -> Expr:
+        expr: Expr = self.primary()
+
+        while True:
+            if self.match(TokenType.LEFT_PAREN):
+                expr = self.finish_call(expr)
+            else:
+                break
+
+        return expr
+
+    def finish_call(self, callee: Expr) -> Expr:
+        arguments: list[Expr] = []
+        if not self.check(TokenType.RIGHT_PAREN):
+            while True:
+                arguments.append(self.expression())
+                if len(arguments) >= 255:
+                    self.error(self.peek(), "Can't have more than 255 arguements.")
+                if not self.match(TokenType.COMMA):
+                    break
+        paren: Token = self.consume(TokenType.RIGHT_PAREN, "Expect ')' after arguements.")
+
+        return Call(callee, paren, arguments)
 
     def factor(self) -> Expr:
         expr: Expr = self.unary()
