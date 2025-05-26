@@ -30,8 +30,7 @@ class Resolver:
         match expr:
             case Variable(name):
                 if not self.scopes and self.scopes[-1][name.lexeme] is False:
-                    # Plox.error(name, "Can't read local variable in it's own initializer.")
-                    pass
+                    raise Exception(f"{name}, Can't read local variable in it's own initializer.")
 
                 self.resolve_local(expr, name)
             case Assign(name, value):
@@ -87,8 +86,7 @@ class Resolver:
                 self.resolve_function(stmt, FunctionType.FUNCTION)
             case Return(keyword, value):
                 if self.currentFunction == FunctionType.NONE:
-                    # Plox.error(keyword, "Can't return from top-level code.")
-                    pass
+                    raise Exception(f"{keyword}, Can't return from top-level code.")
                 if value:
                     self.resolve(value)
             case While(condition, body):
@@ -115,8 +113,7 @@ class Resolver:
 
         scope = self.scopes[-1]
         if name.lexeme in self.scopes:
-            # Plox.error(name, "Already a variable with this name in this scope.")
-            pass
+            raise Exception(f"{name}, Already a variable with this name in this scope.")
         scope[name.lexeme] = False
 
     def define(self, name: Token):

@@ -63,6 +63,9 @@ class Plox:
             Plox.had_error = True
             return
 
+        if Plox.had_error:
+            return
+
         try:
             Plox.interpreter.interpret(statements)
         except RuntimeError:
