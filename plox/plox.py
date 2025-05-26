@@ -1,5 +1,6 @@
 import sys
 from plox.interpreter import Interpreter, LoxRuntimeError
+from plox.resolver import Resolver
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.scanner import Scanner
@@ -45,9 +46,27 @@ class Plox:
         scanner = Scanner(input)
         tokens: list[Token] = scanner.scan_tokens()
 
+        if Plox.had_error:
+            return
+
         parser: Parser = Parser(tokens)
         statements: list[Stmt] = parser.parse()
-        Plox.interpreter.interpret(statements)
+
+        if Plox.had_error:
+            return
+
+        try:
+            resolver: Resolver = Resolver(Plox.interpreter)
+            for statement in statements:
+                resolver.resolve(statement)
+        except Exception:
+            Plox.had_error = True
+            return
+
+        try:
+            Plox.interpreter.interpret(statements)
+        except RuntimeError:
+            Plox.had_runtime_error = True
 
     @staticmethod
     def runFile(path: str):

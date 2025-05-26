@@ -24,8 +24,12 @@ class Interpreter:
     def __init__(self):
         self.globals = Environment()
         self.environment = self.globals
+        self.locals = {}
 
         self.globals.define("clock", NativeClockFunction())
+
+    def resolve(self, expr: Expr, depth: int):
+        self.locals[expr] = depth
 
     def check_if_number(self, operator: Token, left: Any, right: Any) -> None:
         if isinstance(left, int | float) and isinstance(right, int | float):
@@ -105,12 +109,16 @@ class Interpreter:
             case Grouping(expression):
                 return self.evaluate(expression)
             case Variable(name):
-                return self.environment.get(name)
+                return self.look_up_variable(name, expr)
             case Assign(name, value):
                 value = self.evaluate(value)
-                self.environment.assign(name, value)
+                distance = self.locals[expr]
+                if distance:
+                    self.environment.assign_at(distance, name, value)
+                else:
+                    self.globals.assign(name, value)
                 return value
-            case Call(callee, paren, arguments):
+            case Call(callee, _, arguments):
                 callee_value = self.evaluate(callee)
 
                 if not isinstance(callee_value, PloxCallable):
@@ -124,6 +132,12 @@ class Interpreter:
                 return callee_value.call(self, evaluated_args)
             case _:
                 raise ValueError("Unknown expression type")
+
+    def look_up_variable(self, name: Token, expr: Expr):
+        distance = self.locals.get(expr)
+        if distance is not None:
+            return self.environment.get_at(distance, name.lexeme)
+        return self.globals.get(name)
 
     def execute(self, stmt: Stmt):
         match stmt:

@@ -7,48 +7,48 @@ class Expr:
     pass
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Binary(Expr):
     left: Expr
     operator: Token
     right: Expr
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Grouping(Expr):
     expression: Expr
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Literal(Expr):
     value: Any
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Unary(Expr):
     operator: Token
     right: Expr
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Variable(Expr):
     name: Token
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Assign(Expr):
     name: Token
     value: Expr
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Logical(Expr):
     left: Expr
     operator: Token
     right: Expr
 
 
-@dataclass
+@dataclass(unsafe_hash=True)
 class Call(Expr):
     callee: Expr
     paren: Token
