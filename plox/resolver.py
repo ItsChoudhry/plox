@@ -2,7 +2,7 @@ from enum import Enum
 from typing import TYPE_CHECKING, Union
 
 from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
-from plox.stmt import Block, Expression, Function, If, Print, Return, Stmt, Var, While
+from plox.stmt import Block, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
 
 if TYPE_CHECKING:
@@ -29,7 +29,7 @@ class Resolver:
     def resolve_expr(self, expr: Expr):
         match expr:
             case Variable(name):
-                if not self.scopes and self.scopes[-1][name.lexeme] is False:
+                if self.scopes and name.lexeme in self.scopes[-1] and self.scopes[-1][name.lexeme] is False:
                     raise Exception(f"{name}, Can't read local variable in it's own initializer.")
 
                 self.resolve_local(expr, name)
@@ -62,9 +62,9 @@ class Resolver:
     def resolve_stmt(self, stmt: Stmt):
         match stmt:
             case Expression(expression):
-                self.resolve_expr(expression)
+                self.resolve(expression)
             case Print(expression):
-                self.resolve_expr(expression)
+                self.resolve(expression)
             case Block(statements):
                 self.begin_scope()
                 for s in statements:
@@ -92,6 +92,9 @@ class Resolver:
             case While(condition, body):
                 self.resolve(condition)
                 self.resolve(body)
+            case Class(name, _):
+                self.declare(name)
+                self.define(name)
 
     def resolve_function(self, func: Function, type: FunctionType):
         enclosingFunction = self.currentFunction
@@ -112,7 +115,7 @@ class Resolver:
             return
 
         scope = self.scopes[-1]
-        if name.lexeme in self.scopes:
+        if name.lexeme in scope:
             raise Exception(f"{name}, Already a variable with this name in this scope.")
         scope[name.lexeme] = False
 
@@ -126,3 +129,9 @@ class Resolver:
             self.resolve_stmt(node)
         else:
             self.resolve_expr(node)
+
+    def resolve_program(self, statements: list[Stmt]):
+        self.begin_scope()
+        for stmt in statements:
+            self.resolve(stmt)
+        self.end_scope()

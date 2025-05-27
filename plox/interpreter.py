@@ -2,7 +2,7 @@ from dataclasses import dataclass
 import time
 from typing import Any, override
 from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
-from plox.stmt import Block, Function, If, Return, Stmt, Print, Expression, Var, While
+from plox.stmt import Block, Class, Function, If, Return, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
 from plox.environment import Environment
@@ -169,6 +169,11 @@ class Interpreter:
                     return_value = self.evaluate(value)
 
                 raise PloxReturn(return_value)
+            case Class(name, _):
+                self.environment.define(name.lexeme, None)
+
+                klass: PloxClass = PloxClass(name.lexeme)
+                self.environment.assign(name, klass)
             case _:
                 raise ValueError("Unknown statement type")
 
@@ -205,6 +210,33 @@ class PloxCallable:
 
     def __str__(self) -> str:
         return "<callable>"
+
+
+class PloxClass(PloxCallable):
+    def __init__(self, name) -> None:
+        self.name = name
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    @override
+    def arity(self) -> int:
+        return 0
+
+    @override
+    def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
+        instance: PloxInstance = PloxInstance(self)
+        return instance
+
+
+class PloxInstance:
+    def __init__(self, klass) -> None:
+        self.klass = klass
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.klass} instance"
 
 
 @dataclass

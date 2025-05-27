@@ -57,8 +57,7 @@ class Plox:
 
         try:
             resolver: Resolver = Resolver(Plox.interpreter)
-            for statement in statements:
-                resolver.resolve(statement)
+            resolver.resolve_program(statements)
         except Exception:
             Plox.had_error = True
             return

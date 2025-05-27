@@ -52,3 +52,9 @@ class If(Stmt):
     condition: Expr
     thenBranch: Stmt
     elseBranch: Stmt
+
+
+@dataclass
+class Class(Stmt):
+    name: Token
+    methods: list[Function]
