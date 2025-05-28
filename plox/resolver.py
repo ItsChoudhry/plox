@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING, Union
 
-from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Unary, Variable
 from plox.stmt import Block, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
 
@@ -52,6 +52,11 @@ class Resolver:
                 self.resolve(right)
             case Unary(_, right):
                 self.resolve(right)
+            case Get(name, obj):
+                self.resolve(obj)
+            case Set(_, obj, value):
+                self.resolve(value)
+                self.resolve(obj)
 
     def resolve_local(self, expr, name):
         for distance, scope in enumerate(reversed(self.scopes)):

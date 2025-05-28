@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import time
 from typing import Any, override
-from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Unary, Variable
 from plox.stmt import Block, Class, Function, If, Return, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
@@ -130,6 +130,22 @@ class Interpreter:
                     pass
 
                 return callee_value.call(self, evaluated_args)
+            case Get(name, obj):
+                obje: Any = self.evaluate(obj)
+
+                if isinstance(obje, PloxInstance):
+                    return obje.get(expr.name)
+
+                raise RuntimeError(expr.name, "Only instances have properties.")
+            case Set(name, obj, value):
+                obje = self.evaluate(obj)
+
+                if not isinstance(obje, PloxInstance):
+                    raise RuntimeError(name, "Only instances have fields.")
+
+                value = self.evaluate(value)
+                obje.set(name, value)
+                return value
             case _:
                 raise ValueError("Unknown expression type")
 
@@ -233,6 +249,15 @@ class PloxClass(PloxCallable):
 class PloxInstance:
     def __init__(self, klass) -> None:
         self.klass = klass
+        self.fields = {}
+
+    def get(self, name: Token):
+        if name.lexeme in self.fields:
+            return self.fields[name.lexeme]
+        raise RuntimeError(f"{name}, undefined property '{name.lexeme}'.")
+
+    def set(self, name: Token, value: Any):
+        self.fields[name.lexeme] = value
 
     @override
     def __str__(self) -> str:

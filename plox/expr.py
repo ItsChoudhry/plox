@@ -53,3 +53,16 @@ class Call(Expr):
     callee: Expr
     paren: Token
     arguments: list[Expr]
+
+
+@dataclass(unsafe_hash=True)
+class Get(Expr):
+    name: Token
+    obj: Expr
+
+
+@dataclass(unsafe_hash=True)
+class Set(Expr):
+    name: Token
+    obj: Expr
+    value: Expr

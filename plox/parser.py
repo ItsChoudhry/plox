@@ -1,7 +1,7 @@
 from typing import Final
 from plox.stmt import Block, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
-from plox.expr import Assign, Binary, Call, Expr, Grouping, Literal, Logical, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Unary, Variable
 from plox.token_type import TokenType
 
 
@@ -43,7 +43,7 @@ class Parser:
     printStmt   → "print" expression ";" ;
     exprStmt    → "return" expression? ";" ;
     expression  → assignment ;
-    assignment  → IDENTIFIER "=" assignment
+    assignment  → ( call "." )? IDENTIFIER "=" assignment
                 | logic_or ;
     logic_or    → logic_and ( "or" logic_and )* ;
     logic_and   → equality ( "and" equality )* ;
@@ -52,7 +52,7 @@ class Parser:
     term        → factor ( ( "-" | "+" ) factor )*
     factor      → unary ( ( "/" | "*" ) unary | "(" expression ")" )*
     unary       → ( "!" | "-" ) unary | call
-    call        → primary ( "(" arguments? ")" )*;
+    call        → primary ( "(" arguments? ")" | "." INDENTIFIER )*;
     arguments   → expression ( "," expression )* ;
     primary     → NUMBER | STRING | "false" | "true" | "nil"
                 | "(" expression ")"
@@ -205,7 +205,7 @@ class Parser:
         elseBranch: Stmt | None = None
 
         if self.match(TokenType.ELSE):
-            elseBranch: Stmt = self.statement()
+            elseBranch = self.statement()
 
         return If(condition, thenBranch, elseBranch)
 
@@ -239,10 +239,11 @@ class Parser:
                 TokenType.RETURN,
             ):
                 return
-        self.advance()
+            self.advance()
 
     @staticmethod
     def error(token: Token, message: str) -> ParseError:
+        print(f"[line {token.line}] Error at '{token.lexeme}': {message}")
         return ParseError(token, message)
 
     def consume(self, type: TokenType, message: str) -> Token:
@@ -284,6 +285,9 @@ class Parser:
         while True:
             if self.match(TokenType.LEFT_PAREN):
                 expr = self.finish_call(expr)
+            elif self.match(TokenType.DOT):
+                name: Token = self.consume(TokenType.IDENTIFIER, "Expect property name after '.'.")
+                expr = Get(name, expr)
             else:
                 break
 
@@ -382,6 +386,9 @@ class Parser:
             if isinstance(expr, Variable):
                 name = expr.name
                 return Assign(name, value)
+            elif isinstance(expr, Get):
+                get: Get = expr
+                return Set(get.name, get.obj, value)
 
             self.error(equals, "Invalid assignment target.")
 
