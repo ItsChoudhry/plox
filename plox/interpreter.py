@@ -185,10 +185,15 @@ class Interpreter:
                     return_value = self.evaluate(value)
 
                 raise PloxReturn(return_value)
-            case Class(name, _):
+            case Class(name, methods):
                 self.environment.define(name.lexeme, None)
 
-                klass: PloxClass = PloxClass(name.lexeme)
+                mets = {}
+                for method in methods:
+                    func = PloxFunction(method, self.environment)
+                    mets[method.name.lexeme] = func
+
+                klass: PloxClass = PloxClass(name.lexeme, mets)
                 self.environment.assign(name, klass)
             case _:
                 raise ValueError("Unknown statement type")
@@ -226,42 +231,6 @@ class PloxCallable:
 
     def __str__(self) -> str:
         return "<callable>"
-
-
-class PloxClass(PloxCallable):
-    def __init__(self, name) -> None:
-        self.name = name
-
-    @override
-    def __str__(self) -> str:
-        return f"{self.name}"
-
-    @override
-    def arity(self) -> int:
-        return 0
-
-    @override
-    def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
-        instance: PloxInstance = PloxInstance(self)
-        return instance
-
-
-class PloxInstance:
-    def __init__(self, klass) -> None:
-        self.klass = klass
-        self.fields = {}
-
-    def get(self, name: Token):
-        if name.lexeme in self.fields:
-            return self.fields[name.lexeme]
-        raise RuntimeError(f"{name}, undefined property '{name.lexeme}'.")
-
-    def set(self, name: Token, value: Any):
-        self.fields[name.lexeme] = value
-
-    @override
-    def __str__(self) -> str:
-        return f"{self.klass} instance"
 
 
 @dataclass
@@ -308,3 +277,51 @@ class NativeClockFunction(PloxCallable):
     @override
     def __str__(self) -> str:
         return "<native fn>"
+
+
+class PloxClass(PloxCallable):
+    def __init__(self, name: str, methods: dict[str, PloxFunction]) -> None:
+        self.name = name
+        self.methods = methods
+
+    def find_method(self, name: str):
+        if name in self.methods:
+            return self.methods[name]
+
+        return None
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.name}"
+
+    @override
+    def arity(self) -> int:
+        return 0
+
+    @override
+    def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
+        instance: PloxInstance = PloxInstance(self)
+        return instance
+
+
+class PloxInstance:
+    def __init__(self, klass: PloxClass) -> None:
+        self.klass = klass
+        self.fields = {}
+
+    def get(self, name: Token):
+        if name.lexeme in self.fields:
+            return self.fields[name.lexeme]
+
+        method: PloxFunction = self.klass.find_method(name.lexeme)
+        if method:
+            return method
+
+        raise RuntimeError(f"{name}, undefined property '{name.lexeme}'.")
+
+    def set(self, name: Token, value: Any):
+        self.fields[name.lexeme] = value
+
+    @override
+    def __str__(self) -> str:
+        return f"{self.klass} instance"

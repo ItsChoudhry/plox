@@ -12,6 +12,7 @@ if TYPE_CHECKING:
 class FunctionType(Enum):
     NONE = 0
     FUNCTION = 1
+    METHOD = 2
 
 
 class Resolver:
@@ -97,9 +98,13 @@ class Resolver:
             case While(condition, body):
                 self.resolve(condition)
                 self.resolve(body)
-            case Class(name, _):
+            case Class(name, methods):
                 self.declare(name)
                 self.define(name)
+
+                for method in methods:
+                    declaraction: FunctionType = FunctionType.METHOD
+                    self.resolve_function(method, declaraction)
 
     def resolve_function(self, func: Function, type: FunctionType):
         enclosingFunction = self.currentFunction
