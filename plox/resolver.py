@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING, Union
 
-from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
 from plox.stmt import Block, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
 
@@ -15,11 +15,17 @@ class FunctionType(Enum):
     METHOD = 2
 
 
+class ClassType(Enum):
+    NONE = 0
+    CLASS = 1
+
+
 class Resolver:
     def __init__(self, interpreter) -> None:
         self.interpreter: Interpreter = interpreter
         self.scopes = []
         self.currentFunction = FunctionType.NONE
+        self.currentClass: ClassType = ClassType.NONE
 
     def begin_scope(self):
         self.scopes.append({})
@@ -58,6 +64,10 @@ class Resolver:
             case Set(_, obj, value):
                 self.resolve(value)
                 self.resolve(obj)
+            case This(keyword):
+                if self.currentClass == ClassType.NONE:
+                    raise Exception(f"Can't use 'this' outside of a class.")
+                self.resolve_local(expr, keyword)
 
     def resolve_local(self, expr, name):
         for distance, scope in enumerate(reversed(self.scopes)):
@@ -99,12 +109,20 @@ class Resolver:
                 self.resolve(condition)
                 self.resolve(body)
             case Class(name, methods):
+                exclosingClass: ClassType = self.currentClass
+                self.currentClass = ClassType.CLASS
+
                 self.declare(name)
                 self.define(name)
 
+                self.begin_scope()
+                self.scopes[-1]["this"] = True
                 for method in methods:
                     declaraction: FunctionType = FunctionType.METHOD
                     self.resolve_function(method, declaraction)
+                self.end_scope()
+
+                self.currentClass = exclosingClass
 
     def resolve_function(self, func: Function, type: FunctionType):
         enclosingFunction = self.currentFunction

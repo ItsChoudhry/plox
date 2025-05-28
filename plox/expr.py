@@ -66,3 +66,8 @@ class Set(Expr):
     name: Token
     obj: Expr
     value: Expr
+
+
+@dataclass(unsafe_hash=True)
+class This(Expr):
+    keyword: Token

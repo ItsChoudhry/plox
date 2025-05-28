@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import time
 from typing import Any, override
-from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
 from plox.stmt import Block, Class, Function, If, Return, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
@@ -146,6 +146,8 @@ class Interpreter:
                 value = self.evaluate(value)
                 obje.set(name, value)
                 return value
+            case This(keyword):
+                return self.look_up_variable(keyword, expr)
             case _:
                 raise ValueError("Unknown expression type")
 
@@ -263,6 +265,11 @@ class PloxFunction(PloxCallable):
             return return_value.value
         return None
 
+    def bind(self, instance: "PloxInstance"):
+        environment: Environment = Environment(self.closure)
+        environment.define("this", instance)
+        return PloxFunction(self.declaraction, environment)
+
 
 # Native clock function
 class NativeClockFunction(PloxCallable):
@@ -315,7 +322,7 @@ class PloxInstance:
 
         method: PloxFunction = self.klass.find_method(name.lexeme)
         if method:
-            return method
+            return method.bind(self)
 
         raise RuntimeError(f"{name}, undefined property '{name.lexeme}'.")
 

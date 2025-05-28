@@ -58,8 +58,9 @@ class Plox:
         try:
             resolver: Resolver = Resolver(Plox.interpreter)
             resolver.resolve_program(statements)
-        except Exception:
+        except Exception as e:
             Plox.had_error = True
+            print(e)
             return
 
         if Plox.had_error:
