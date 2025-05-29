@@ -178,7 +178,7 @@ class Interpreter:
                 while self.is_truthy(self.evaluate(condition)):
                     self.execute(body)
             case Function(name, params, body):
-                function: PloxFunction = PloxFunction(stmt, self.environment)
+                function: PloxFunction = PloxFunction(stmt, self.environment, False)
                 self.environment.define(name.lexeme, function)
             case Return(keyword, value):
                 return_value: Any = None
@@ -192,7 +192,7 @@ class Interpreter:
 
                 mets = {}
                 for method in methods:
-                    func = PloxFunction(method, self.environment)
+                    func = PloxFunction(method, self.environment, method.name.lexeme == "init")
                     mets[method.name.lexeme] = func
 
                 klass: PloxClass = PloxClass(name.lexeme, mets)
@@ -237,13 +237,11 @@ class PloxCallable:
 
 @dataclass
 class PloxFunction(PloxCallable):
-    declaraction: Function
-    closure: Environment
-
-    def __init__(self, declaraction: Function, closure: Environment) -> None:
+    def __init__(self, declaraction: Function, closure: Environment, is_initializer: bool) -> None:
         super().__init__()
         self.declaraction = declaraction
         self.closure = closure
+        self.is_initializer = is_initializer
 
     @override
     def arity(self):
@@ -262,13 +260,18 @@ class PloxFunction(PloxCallable):
         try:
             interpreter.executeBlock(self.declaraction.body, environment)
         except PloxReturn as return_value:
+            if self.is_initializer:
+                return self.closure.get_at(0, "this")
             return return_value.value
+
+        if self.is_initializer:
+            return self.closure.get_at(0, "this")
         return None
 
     def bind(self, instance: "PloxInstance"):
         environment: Environment = Environment(self.closure)
         environment.define("this", instance)
-        return PloxFunction(self.declaraction, environment)
+        return PloxFunction(self.declaraction, environment, self.is_initializer)
 
 
 # Native clock function
@@ -303,11 +306,17 @@ class PloxClass(PloxCallable):
 
     @override
     def arity(self) -> int:
-        return 0
+        initializer = self.find_method("init")
+        if initializer is None:
+            return 0
+        return initializer.arity()
 
     @override
     def call(self, interpreter: Interpreter, arguments: list[Any]) -> Any:
         instance: PloxInstance = PloxInstance(self)
+        initializer = self.find_method("init")
+        if initializer is not None:
+            initializer.bind(instance).call(interpreter, arguments)
         return instance
 
 

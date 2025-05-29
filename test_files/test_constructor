@@ -1,0 +1,13 @@
+class Foo {
+  init(thing) {
+      this.thing = thing;
+  }
+
+  output() {
+      print this.thing;
+  }
+}
+
+var foo = Foo(5);
+foo.output();
+

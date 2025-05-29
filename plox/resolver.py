@@ -13,6 +13,7 @@ class FunctionType(Enum):
     NONE = 0
     FUNCTION = 1
     METHOD = 2
+    INITIALIZER = 3
 
 
 class ClassType(Enum):
@@ -103,8 +104,11 @@ class Resolver:
             case Return(keyword, value):
                 if self.currentFunction == FunctionType.NONE:
                     raise Exception(f"{keyword}, Can't return from top-level code.")
-                if value:
-                    self.resolve(value)
+
+                if value is not None and self.currentFunction == FunctionType.INITIALIZER:
+                    raise Exception(f"{value} Can't return a value from an initializer.")
+
+                self.resolve(value)
             case While(condition, body):
                 self.resolve(condition)
                 self.resolve(body)
@@ -119,6 +123,8 @@ class Resolver:
                 self.scopes[-1]["this"] = True
                 for method in methods:
                     declaraction: FunctionType = FunctionType.METHOD
+                    if method.name.lexeme == "init":
+                        declaraction = FunctionType.INITIALIZER
                     self.resolve_function(method, declaraction)
                 self.end_scope()
 
