@@ -19,6 +19,7 @@ class FunctionType(Enum):
 class ClassType(Enum):
     NONE = 0
     CLASS = 1
+    SUBCLASS = 2
 
 
 class Resolver:
@@ -26,7 +27,7 @@ class Resolver:
         self.interpreter: Interpreter = interpreter
         self.scopes = []
         self.currentFunction = FunctionType.NONE
-        self.currentClass: ClassType = ClassType.NONE
+        self.current_class: ClassType = ClassType.NONE
 
     def begin_scope(self):
         self.scopes.append({})
@@ -66,10 +67,15 @@ class Resolver:
                 self.resolve(value)
                 self.resolve(obj)
             case This(keyword):
-                if self.currentClass == ClassType.NONE:
+                if self.current_class == ClassType.NONE:
                     raise Exception(f"Can't use 'this' outside of a class.")
                 self.resolve_local(expr, keyword)
             case Super(keyword, _):
+                if self.current_class == ClassType.NONE:
+                    raise Exception(keyword, "Can't use 'super' outside of a class.")
+                elif self.current_class != ClassType.SUBCLASS:
+                    raise Exception(keyword, "Can't use 'super' in a class with no superclass.")
+
                 self.resolve_local(expr, keyword)
 
     def resolve_local(self, expr, name):
@@ -116,13 +122,14 @@ class Resolver:
                 self.resolve(condition)
                 self.resolve(body)
             case Class(name, superclass, methods):
-                exclosingClass: ClassType = self.currentClass
-                self.currentClass = ClassType.CLASS
+                exclosingClass: ClassType = self.current_class
+                self.current_class = ClassType.CLASS
 
                 self.declare(name)
                 self.define(name)
 
                 if superclass:
+                    self.current_class = ClassType.SUBCLASS
                     if name.lexeme == superclass.name.lexeme:
                         raise Exception("A class can't inheir from itself.")
                     self.resolve(superclass)
@@ -142,7 +149,7 @@ class Resolver:
                 if superclass:
                     self.end_scope()
 
-                self.currentClass = exclosingClass
+                self.current_class = exclosingClass
 
     def resolve_function(self, func: Function, type: FunctionType):
         enclosingFunction = self.currentFunction
