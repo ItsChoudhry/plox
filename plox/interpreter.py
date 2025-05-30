@@ -1,7 +1,7 @@
 from dataclasses import dataclass
 import time
-from typing import Any, override
-from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
+from typing import Any, Optional, override
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Super, This, Unary, Variable
 from plox.stmt import Block, Class, Function, If, Return, Stmt, Print, Expression, Var, While
 from plox.token import Token
 from plox.token_type import TokenType
@@ -148,6 +148,18 @@ class Interpreter:
                 return value
             case This(keyword):
                 return self.look_up_variable(keyword, expr)
+            case Super(keyword, method):
+                dist: int = self.locals.get(expr)
+                superclass: PloxClass = self.environment.get_at(dist, "super")
+
+                super_object: PloxInstance = self.environment.get_at(dist - 1, "this")
+
+                m_func: PloxFunction = superclass.find_method(method.lexeme)
+
+                if not m_func:
+                    raise RuntimeError(method, f"Undefined property'{method.lexeme}'.")
+                return m_func.bind(super_object)
+
             case _:
                 raise ValueError("Unknown expression type")
 
@@ -177,25 +189,40 @@ class Interpreter:
             case While(condition, body):
                 while self.is_truthy(self.evaluate(condition)):
                     self.execute(body)
-            case Function(name, params, body):
+            case Function(name, _, body):
                 function: PloxFunction = PloxFunction(stmt, self.environment, False)
                 self.environment.define(name.lexeme, function)
-            case Return(keyword, value):
+            case Return(_, value):
                 return_value: Any = None
 
                 if value is not None:
                     return_value = self.evaluate(value)
 
                 raise PloxReturn(return_value)
-            case Class(name, methods):
+            case Class(name, superclass, methods):
+                s_class = None
+                if superclass:
+                    s_class = self.evaluate(superclass)
+                    if not isinstance(s_class, PloxClass):
+                        raise RuntimeError(superclass.name, "Superclass must be a class.")
                 self.environment.define(name.lexeme, None)
+
+                if superclass:
+                    environment: Environment = Environment(self.environment)
+                    environment.define("super", s_class)
 
                 mets = {}
                 for method in methods:
-                    func = PloxFunction(method, self.environment, method.name.lexeme == "init")
+                    func = PloxFunction(
+                        method, environment if superclass else self.environment, method.name.lexeme == "init"
+                    )
                     mets[method.name.lexeme] = func
 
-                klass: PloxClass = PloxClass(name.lexeme, mets)
+                klass: PloxClass = PloxClass(name.lexeme, s_class, mets)
+
+                if superclass:
+                    environment = self.environment.enclosing
+
                 self.environment.assign(name, klass)
             case _:
                 raise ValueError("Unknown statement type")
@@ -290,13 +317,17 @@ class NativeClockFunction(PloxCallable):
 
 
 class PloxClass(PloxCallable):
-    def __init__(self, name: str, methods: dict[str, PloxFunction]) -> None:
+    def __init__(self, name: str, super_class: Optional["PloxClass"], methods: dict[str, PloxFunction]) -> None:
         self.name = name
         self.methods = methods
+        self.super_class = super_class
 
     def find_method(self, name: str):
         if name in self.methods:
             return self.methods[name]
+
+        if self.super_class:
+            return self.super_class.find_method(name)
 
         return None
 

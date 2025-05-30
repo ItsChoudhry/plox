@@ -43,7 +43,8 @@ class Environment:
     def ancestor(self, distance: int):
         environment: Environment = self
 
-        for i in range(distance):
-            environment = environment.enclosing
+        for _ in range(distance):
+            if environment.enclosing:
+                environment = environment.enclosing
 
         return environment

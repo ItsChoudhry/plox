@@ -1,7 +1,7 @@
 from enum import Enum
 from typing import TYPE_CHECKING, Union
 
-from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Super, This, Unary, Variable
 from plox.stmt import Block, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
 
@@ -69,6 +69,8 @@ class Resolver:
                 if self.currentClass == ClassType.NONE:
                     raise Exception(f"Can't use 'this' outside of a class.")
                 self.resolve_local(expr, keyword)
+            case Super(keyword, _):
+                self.resolve_local(expr, keyword)
 
     def resolve_local(self, expr, name):
         for distance, scope in enumerate(reversed(self.scopes)):
@@ -105,19 +107,28 @@ class Resolver:
                 if self.currentFunction == FunctionType.NONE:
                     raise Exception(f"{keyword}, Can't return from top-level code.")
 
-                if value is not None and self.currentFunction == FunctionType.INITIALIZER:
-                    raise Exception(f"{value} Can't return a value from an initializer.")
+                if value is not None:
+                    if self.currentFunction == FunctionType.INITIALIZER:
+                        raise Exception(f"{value} Can't return a value from an initializer.")
 
-                self.resolve(value)
+                    self.resolve(value)
             case While(condition, body):
                 self.resolve(condition)
                 self.resolve(body)
-            case Class(name, methods):
+            case Class(name, superclass, methods):
                 exclosingClass: ClassType = self.currentClass
                 self.currentClass = ClassType.CLASS
 
                 self.declare(name)
                 self.define(name)
+
+                if superclass:
+                    if name.lexeme == superclass.name.lexeme:
+                        raise Exception("A class can't inheir from itself.")
+                    self.resolve(superclass)
+
+                    self.begin_scope()
+                    self.scopes[-1]["super"] = True
 
                 self.begin_scope()
                 self.scopes[-1]["this"] = True
@@ -127,6 +138,9 @@ class Resolver:
                         declaraction = FunctionType.INITIALIZER
                     self.resolve_function(method, declaraction)
                 self.end_scope()
+
+                if superclass:
+                    self.end_scope()
 
                 self.currentClass = exclosingClass
 

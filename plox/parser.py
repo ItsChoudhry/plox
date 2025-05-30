@@ -1,7 +1,7 @@
 from typing import Final
 from plox.stmt import Block, Class, Expression, Function, If, Print, Return, Stmt, Var, While
 from plox.token import Token
-from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, This, Unary, Variable
+from plox.expr import Assign, Binary, Call, Expr, Get, Grouping, Literal, Logical, Set, Super, This, Unary, Variable
 from plox.token_type import TokenType
 
 
@@ -19,7 +19,8 @@ class Parser:
                 | funDecl
                 | varDecl
                 | statement ;
-    classDecl   → "class" IDENTIFIER "{" function* "}" ;
+    classDecl   → "class" IDENTIFIER ( "<" IDENTIFIER )?
+                  {" function* "}" ;
     funDecl     → "fun" function ;
     function    → IDENTIFIER "(" parameters? ")" block ;
     parameters  → IDENTIFIER ("," IDENTIFIER)* ;
@@ -56,7 +57,7 @@ class Parser:
     arguments   → expression ( "," expression )* ;
     primary     → NUMBER | STRING | "false" | "true" | "nil"
                 | "(" expression ")"
-                | IDENTIFIER ;
+                | "super" "." IDENTIFIER ;
     """
 
     def __init__(self, tokens: list[Token]) -> None:
@@ -114,6 +115,10 @@ class Parser:
 
     def class_declaration(self):
         name: Token = self.consume(TokenType.IDENTIFIER, "Expect class name.")
+        superclass: Variable = None
+        if self.match(TokenType.LESS):
+            self.consume(TokenType.IDENTIFIER, "expect superclass name.")
+            superclass = Variable(self.previous())
         self.consume(TokenType.LEFT_CURLY_BRACE, "Expect '{' before class body.")
 
         methods = []
@@ -122,7 +127,7 @@ class Parser:
 
         self.consume(TokenType.RIGHT_CURLY_BRACE, "Expect '}' after class body.")
 
-        return Class(name, methods)
+        return Class(name, superclass, methods)
 
     def statement(self):
         if self.match(TokenType.FOR):
@@ -272,6 +277,13 @@ class Parser:
             expr: Expr = self.expression()
             self.consume(TokenType.RIGHT_PAREN, "Expect ')' after expression.")
             return Grouping(expr)
+
+        if self.match(TokenType.SUPER):
+            keyword: Token = self.previous()
+            self.consume(TokenType.DOT, "Expect '.' after 'super'.")
+            method: Token = self.consume(TokenType.IDENTIFIER, "Expect superclass method name.")
+
+            return Super(keyword, method)
 
         raise self.error(self.peek(), "Expect expression.")
 

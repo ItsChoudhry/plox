@@ -1,5 +1,5 @@
 from dataclasses import dataclass
-from plox.expr import Expr
+from plox.expr import Expr, Variable
 from plox.token import Token
 
 
@@ -57,4 +57,5 @@ class If(Stmt):
 @dataclass
 class Class(Stmt):
     name: Token
+    superclass: Variable
     methods: list[Function]
